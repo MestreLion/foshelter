@@ -1,0 +1,340 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+#    Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. See <http://www.gnu.org/licenses/gpl.html>
+
+
+"""
+    Fallout Shelter endurance converter to E17 equivalence
+"""
+
+import sys
+import os
+import argparse
+import logging
+
+
+log = logging.getLogger(os.path.basename(os.path.splitext(__file__)[0]))
+
+MAXLEVEL = 50
+MAXEND = 17
+MIDEND = 15
+BASEEND = 10
+NEWEND = 6
+
+
+class FSException(Exception): pass
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description=__doc__)
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-q', '--quiet',
+                       dest='loglevel',
+                       const=logging.WARNING,
+                       default=logging.INFO,
+                       action="store_const",
+                       help="Suppress informative messages.")
+
+    group.add_argument('-v', '--verbose',
+                       dest='loglevel',
+                       const=logging.DEBUG,
+                       action="store_const",
+                       help="Verbose mode, output extra info.")
+
+    parser.add_argument('-t', '--test',
+                       dest='test',
+                       default=False,
+                       action="store_true",
+                       help="Verbose mode, output extra info.")
+
+    parser.add_argument(nargs=1,
+                        metavar='ENDURANCE',
+                        dest='endurance',
+                        help="Endurance string, such as '0320', or '20E5'.")
+
+    args = parser.parse_args(argv)
+    args.debug = args.loglevel == logging.DEBUG
+
+    return args
+
+
+def main(argv=None):
+    args = parse_args(argv or [])
+    logging.basicConfig(level=args.loglevel,
+                        format='%(levelname)s: %(message)s')
+    log.debug(args)
+
+    if args.test:
+        tests()
+        return
+
+    # Determine the format: xx; xxyy; xxEyy; Exx; xx,yy
+    # xx   : E10 (BASEEND) until level xx, and E17 (MAXEND) afterwards
+    # xxyy : E10 until level xx, E15 (MIDEND) until level yy, E17 afterwards
+    #            both xx and yy are required to be double digits
+    # xx,y:  E0y until level xx, E17 afterwards. No point using y > 10
+    # xxEyy: E10 until level xx, Eyy* afterwards
+    # Exx  : Exx* all the way from level 1 to 50 (MAXLEVEL). Same as 1Exx, 01Exx
+    #
+    # All formats but 'xxyy' allow single digits to either or both xx and yy
+    # * : When using E notation, a single-digit Ez actually means E(10+z)
+
+    lvl, end, (leqv, hptot) = parse_end(args.endurance[0].upper())
+
+    print(lvl, end, hptot, leqv, format_lvl_equiv(leqv))
+
+
+# Total Endurance Points at level 50 (MAXLEVEL)
+def end_total(l1, e1, l2=0, e2=0):
+    if not l2:
+        l2=l1
+    etot = (
+               e1 * (l1       -  1)
+        +      e2 * (l2       - l1)
+        +  MAXEND * (MAXLEVEL - l2)
+    )
+    assert round(etot, 5) == round(etot)
+    return int(round(etot))
+
+
+def format_lvl_equiv(leqv):
+    return "%2.0fE%d" % (leqv, MAXEND-BASEEND)
+
+
+# Total Hit Points at level 50
+def hp_total(etot):
+    # https://www.reddit.com/r/foshelter/comments/3jmnhy/dweller_hit_points_revisited/
+    return 105 + ((MAXLEVEL - 1) * 2.5) + (0.5 * etot)
+
+
+def emax_lvl_equiv(l1, e1, l2=0, e2=0):
+    if not l2:
+        l2 = l1
+
+    # Equivalent E17 start level
+    leqv = (l2*(MAXEND-e2) + l1*(e2-e1) + 1.0*(e1-BASEEND)) / (MAXEND-BASEEND)
+
+    etot  = end_total(l1, e1, l2, e2)
+    hptot =  hp_total(etot)
+
+    log.debug("(%2d, %2d), (%2d, %2d): %4.1fE%d, EPTS=%d, HPMAX=%.1f",
+              l1, e1, l2, e2, leqv, MAXEND, etot, hptot)
+
+    # Assert the equivalence in Total Endurance Points
+    try:
+        assert etot == end_total(leqv, BASEEND)
+    except AssertionError:
+        raise FSException(
+            "Assertion Failed! etot(%d, %d, %d, %d)=%s != etot(%s, BASEEND)=%s" %
+            (l1, e1, l2, e2, etot, leqv, end_total(leqv, BASEEND))
+        )
+
+    return leqv, hptot
+
+
+def xxEyy(lvl, end):
+    # Equivalent E17 start level
+    #leqv = emax_lvl_equiv(lvl, MAXLEVEL, end)
+    leqv = emax_lvl_equiv(lvl, BASEEND, MAXLEVEL, end)
+
+    # Total Endurance Points at level 50 (MAXLEVEL)
+    def etot(lvl, end):
+        return BASEEND * (lvl - 1) + end * (MAXLEVEL - lvl)
+
+    # Assert the equivalence in Total Endurance Points
+    assert etot(lvl,  end) == etot(leqv, MAXEND)
+
+    return leqv
+
+
+def xxyy(l1, l2):
+    # Equivalent E17 start level
+    #leqv = emax_lvl_equiv(l1, l2, MIDEND)
+    leqv = emax_lvl_equiv(l1, BASEEND, l2, MIDEND)
+
+    # Total Endurance Points at level 50 (MAXLEVEL)
+    def etot(l1, l2):
+        return (
+              BASEEND * (l1       -  1)
+            +  MIDEND * (l2       - l1)
+            +  MAXEND * (MAXLEVEL - l2)
+        )
+
+    # Assert the equivalence in Total Endurance Points
+    assert etot(l1, l2) == etot(leqv, leqv)
+
+    return leqv
+
+
+def xxCy(lvl, end):
+    # Derived from: etot(lvl, end) = BASEEND*(leqv-1) + MAXEND(MAXLEVEL-leqv)
+    #leqv = lvl + (1.0 * (lvl - 1) * (BASEEND - end)) / (MAXEND - BASEEND)
+    leqv = emax_lvl_equiv(lvl, end, lvl, 0)
+
+    # Total Endurance Points at level 50 (MAXLEVEL)
+    def etot(lvl, end):
+        return (
+                  end * (lvl      -   1)
+            +  MAXEND * (MAXLEVEL - lvl)
+        )
+
+    # Assert the equivalence in Total Endurance Points
+    assert etot(lvl, end) == etot(leqv, BASEEND)
+
+    return leqv
+
+
+def parse_end(endstr):
+    # Try 'E' notation: xxEyy, Exx, Ex
+    if 'E' in endstr:
+        log.debug("xxEyy")
+        lvl, end = endstr.split('E', 1)
+
+        if len(end) == 1:
+            end = int(end) + BASEEND  # single digit after E. Assume x+10
+        end = int(end)
+
+        if not lvl:
+            lvl = 1  # Exx/Ex
+        lvl = int(lvl)
+
+        if int(end) < BASEEND:
+            log.warning("%r? Are you sure the dweller leveled up as E%02d?",
+                        endstr, end)
+
+        return lvl, end, emax_lvl_equiv(lvl, BASEEND, MAXLEVEL, end)
+
+    # Try 'xx,y'
+    if ',' in endstr:
+        log.debug("xx,y")
+        lvl, end = (int(_) for _ in endstr.split(',', 1))
+
+        if False and end > 10:
+            log.warning("%r? Are you sure a dweller arrived with E%s?",
+                        endstr, end)
+        return lvl, end, emax_lvl_equiv(lvl, end)
+
+    # Sanity check
+    if len(endstr) > 4:
+        raise FSException("Invalid endurance format: %s" % endstr)
+
+    # Try 'xxyy'
+    if len(endstr) > 2:
+        log.debug("xxyy")
+        l1, l2 = int(endstr[:2]), int(endstr[2:])
+        if l2 < l1:
+            raise FSException("Invalid endurance format: %r (%d <= %d)", endstr, l2, l1)
+        if l2 == l1:
+            log.warning("Possibly erroneous endurance format: %r (%d == %d)", endstr, l2, l1)
+        return l1, l2, emax_lvl_equiv(l1, BASEEND, l2, MIDEND)
+
+    # Assume 'xx'
+    log.debug("xx")
+    lvl = int(endstr)
+    return lvl, BASEEND, emax_lvl_equiv(lvl, BASEEND)
+
+
+def tests():
+    tests = (
+        ('' ,     ValueError()),
+        ('1',     ( 1, BASEEND, 'X')),
+        ('10',    (10, BASEEND, 'X')),
+        ('100',   FSException()),
+        ('0505',  ( 5,  5, xxyy)),
+        ('0506',  ( 5,  6, xxyy)),
+        ('1011',  (10, 11, xxyy)),
+        ('05051', FSException()),
+        ('10,5',  (10,  5, 'C')),
+        ('5,10',  ( 5, 10, 'C')),
+        ('5,11',  ( 5, 11, 'C')),
+        ('5,7c',  ValueError()),
+        ('5,',    ValueError()),
+        (',5',    ValueError()),
+        ('a,5',   ValueError()),
+        ('5,a',   ValueError()),
+        ('E',     ValueError()),
+        ('1E',    ValueError()),
+        ('E1',    ( 1, 11, xxEyy)),
+        ('E01',   ( 1,  1, xxEyy)),
+        ('1E1',   ( 1, 11, xxEyy)),
+        ('10E5',  (10, 15, xxEyy)),
+    )
+    for t, x in tests:
+        test(t, x, parse_end)
+
+    tests = (
+        ('E7',    1),
+        ('E5',   15),
+        ('E3',   29),
+        ('E0',   50),
+        ('E10',  50),
+        ('8E5',  20),
+        ('15E5', 25),
+    )
+    for t, x in tests:
+        test(parse_end(t)[:2], x, xxEyy)
+
+    tests = (
+        ('0101',    1),
+        ('0108',    3),
+        ('0240', 12.857142857142858)  # end_total gives 749.9999999...
+
+    )
+    for t, x in tests:
+        test(parse_end(t)[:2], x, xxyy)
+
+    tests = (
+        ('1,17',   1),
+        ('10,10', 10),
+        ('5,3',    9),
+
+    )
+    for t, x in tests:
+        test(parse_end(t)[:2], x, xxCy)
+
+
+def test(t, x, f):
+    try:
+        if not isinstance(t, tuple):
+            t = (t,)
+        r = f(*t)
+    except Exception as e:
+        r = e
+
+    if (
+        (r       != x       and not isinstance(x, Exception)) or
+        (type(r) != type(x) and     isinstance(x, Exception))
+    ):
+        log.error("Test failed: %s%r expected %r, got %r", f.__name__, t, x, r)
+        return False
+
+    return True
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except FSException as e:
+        log.error(e)
+        sys.exit(1)
+    except Exception as e:
+        log.critical(e, exc_info=True)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        pass
