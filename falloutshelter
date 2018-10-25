@@ -63,7 +63,19 @@ def parse_args(argv=None):
                        action="store_true",
                        help="Verbose mode, output extra info.")
 
-    parser.add_argument(nargs=1,
+    parser.add_argument('-l', '--level',
+                       dest='level',
+                       type=int,
+                       default=MAXLEVEL,
+                       help="Current dweller level [Default: %(default)s.")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-H', '--hp',
+                       type=float,
+                       dest='hp',
+                       help="Total Hit Points")
+
+    group.add_argument(nargs='?',
                         metavar='ENDURANCE',
                         dest='endurance',
                         help="Endurance string, such as '0320', or '20E5'.")
@@ -95,9 +107,12 @@ def main(argv=None):
     # All formats but 'xxyy' allow single digits to either or both xx and yy
     # * : When using E notation, a single-digit Ez actually means E(10+z)
 
-    lvl, end, (leqv, hptot) = parse_end(args.endurance[0].upper())
+    if args.endurance:
+        lvl, end, (leqv, hptot) = parse_end(args.endurance.upper())
+        print(lvl, end, hptot, leqv, format_lvl_equiv(leqv))
 
-    print(lvl, end, hptot, leqv, format_lvl_equiv(leqv))
+    elif args.hp:
+        print(etot_to_leqv(hp_to_etot(args.hp, args.level), args.level))
 
 
 # Total Endurance Points gained at level based on leveling pattern
@@ -128,6 +143,28 @@ def hp_total(etot, lvl=0):
 
     # https://www.reddit.com/r/foshelter/comments/3jmnhy/dweller_hit_points_revisited/
     return 105 + ((lvl - 1) * 2.5) + (0.5 * etot)
+
+
+def hp_to_etot(hp, lvl=0):
+    if not lvl:
+        lvl = MAXLEVEL
+
+    etot = (hp - 105 - 2.5 * (lvl - 1)) / 0.5
+    assert hp_total(etot, lvl) == hp
+    assert int(etot) == etot
+    log.debug("Total endurance points gained: %s", int(etot))
+
+    return int(etot)
+
+
+def etot_to_leqv(etot, lvl=0):
+    if not lvl:
+        lvl = MAXLEVEL
+
+    leqv = 1.0 * (lvl*MAXEND - BASEEND - etot) / (MAXEND-BASEEND)
+    assert end_total(leqv, BASEEND, 0, 0, lvl) == etot
+
+    return leqv
 
 
 def emax_lvl_equiv(l1, e1, l2=0, e2=0):
