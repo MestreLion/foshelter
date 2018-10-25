@@ -246,7 +246,7 @@ def parse_end(endstr):
         log.debug("xxyy")
         l1, l2 = int(endstr[:2]), int(endstr[2:])
         if l2 < l1:
-            raise FSException("Invalid endurance format: %r (%d <= %d)", endstr, l2, l1)
+            raise FSException("Invalid endurance format: %r (%d <= %d)" % (endstr, l2, l1))
         if l2 == l1:
             log.warning("Possibly erroneous endurance format: %r (%d == %d)", endstr, l2, l1)
         return l1, l2, emax_lvl_equiv(l1, BASEEND, l2, MIDEND)
