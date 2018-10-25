@@ -100,14 +100,18 @@ def main(argv=None):
     print(lvl, end, hptot, leqv, format_lvl_equiv(leqv))
 
 
-# Total Endurance Points at level 50 (MAXLEVEL)
-def end_total(l1, e1, l2=0, e2=0):
+# Total Endurance Points gained at level based on leveling pattern
+def end_total(l1, e1, l2=0, e2=0, lvl=0):
     if not l2:
         l2=l1
+
+    if not lvl:
+        lvl = MAXLEVEL
+
     etot = (
-               e1 * (l1       -  1)
-        +      e2 * (l2       - l1)
-        +  MAXEND * (MAXLEVEL - l2)
+               e1 * (l1  -  1)
+        +      e2 * (l2  - l1)
+        +  MAXEND * (lvl - l2)
     )
     assert round(etot, 5) == round(etot)
     return int(round(etot))
@@ -117,10 +121,13 @@ def format_lvl_equiv(leqv):
     return "%2.0fE%d" % (leqv, MAXEND-BASEEND)
 
 
-# Total Hit Points at level 50
-def hp_total(etot):
+# Total Hit Points at level based on total endurance gained
+def hp_total(etot, lvl=0):
+    if not lvl:
+        lvl = MAXLEVEL
+
     # https://www.reddit.com/r/foshelter/comments/3jmnhy/dweller_hit_points_revisited/
-    return 105 + ((MAXLEVEL - 1) * 2.5) + (0.5 * etot)
+    return 105 + ((lvl - 1) * 2.5) + (0.5 * etot)
 
 
 def emax_lvl_equiv(l1, e1, l2=0, e2=0):
