@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.sav
+
+*.json
+*.bkp
+*.csv
+*.zip
