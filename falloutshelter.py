@@ -33,7 +33,6 @@ MAXLEVEL = 50
 MAXEND = 17
 MIDEND = 15
 BASEEND = 10
-NEWEND = 6
 
 
 class FSException(Exception): pass
@@ -109,10 +108,17 @@ def main(argv=None):
 
     if args.endurance:
         lvl, end, (leqv, hptot) = parse_end(args.endurance.upper())
-        print(lvl, end, hptot, leqv, format_lvl_equiv(leqv))
+        print('_IN_', '_HP__', 'MAXHP', '__E7_Level_equiv__', 'EINFO')
+        print(lvl, end,
+              hp_total(end_total(leqv, BASEEND, 0, 0, args.level), args.level),
+              hptot, leqv, format_lvl_equiv(leqv))
 
     elif args.hp:
-        print(etot_to_leqv(hp_to_etot(args.hp, args.level), args.level))
+        leqv = etot_to_leqv(hp_to_etot(args.hp, args.level), args.level)
+        if args.level == MAXLEVEL:
+            print(leqv, format_lvl_equiv(leqv))
+        else:
+            print(leqv, format_lvl_equiv(leqv), end_total(leqv, BASEEND))
 
 
 # Total Endurance Points gained at level based on leveling pattern
