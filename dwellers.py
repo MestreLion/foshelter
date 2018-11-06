@@ -26,11 +26,12 @@ import logging
 import re
 import argparse
 
+
 MAX_LEVEL = 50
 
 FULL_END  = 10
-MAX_END   = 17
 MID_END   = 15
+MAX_END   = 17
 
 
 log = logging.getLogger(__name__)
@@ -115,7 +116,7 @@ def e17_equiv(l1, e1, l2=0, e2=0):
         l2 = l1
 
     # Alternative:
-    # e17 = 1.0 * (l2*(MAX_END-e2) + l1*(e2-e1) + e1 - FULL_END) / (MAX_END-FULL_END)
+    #e17= 1.0 * (l2*(MAX_END-e2) + l1*(e2-e1) + e1   - FULL_END) / (MAX_END-FULL_END)
     e17 = 1.0 * (MAX_END*l2 - e2*(l2-l1) - e1*(l1-1) - FULL_END) / (MAX_END-FULL_END)
 
     epts  = endurance_points(l1, e1, l2, e2)
@@ -213,7 +214,7 @@ class Dweller():
         xx   : E10 (FULL_END) until level xx, and E17 (MAX_END) afterwards
         xxyy : E10 until level xx, E15 (MID_END) until level yy, E17 afterwards
                    both xx and yy are required to be double digits
-        xx,y:  E0y until level xx, E17 afterwards. No point using y > 10
+        xx,y:  E0y until level xx, E17 afterwards.
         xxEyy: E10 until level xx, Eyy* afterwards
         Exx  : Exx* all the way from level 1 to 50 (MAXLEVEL). Same as 1Exx
         All formats but 'xxyy' allow single digits to either or both xx and yy
