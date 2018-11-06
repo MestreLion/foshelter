@@ -41,6 +41,7 @@ import sys
 import base64
 import json
 import argparse
+import collections
 
 import Crypto.Cipher.AES as AES  # PyPI: pip install pycryptodome
 
@@ -74,7 +75,8 @@ def decrypt(savedata: str) -> dict:
     data = data[:-data[-1]]
 
     # Deserialize JSON string to Python dict object
-    return json.loads(data.decode('ascii'))
+    return json.loads(data.decode('ascii'),
+                      object_pairs_hook=collections.OrderedDict)
 
 
 def encrypt(obj: dict) -> str:
@@ -114,6 +116,6 @@ if __name__ == '__main__':
     if args.decrypt:
         out = prettyjson(decrypt(data))
     else:
-        out = encrypt(json.loads(data))
+        out = encrypt(json.loads(data, object_pairs_hook=collections.OrderedDict))
 
     sys.stdout.write(out)
