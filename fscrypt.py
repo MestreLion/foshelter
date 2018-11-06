@@ -56,7 +56,7 @@ KEY = b'A7CA9F3366D892C2F0BEF417341CA971B69AE9F7BACCCFFCF43C62D1D7D021F9'
 CIPHER = AES.new(base64.b16decode(KEY), AES.MODE_CBC, IV)
 
 
-def fs_decrypt(savedata: bytes) -> dict:
+def decrypt(savedata: bytes) -> dict:
     '''
     Decrypts a Fallout Shelter save game data
     '''
@@ -75,5 +75,8 @@ def prettyjson(obj: dict) -> str:
     return json.dumps(obj, sort_keys=True, indent=4, separators=(',',':'))
 
 
-# Print formatted output
-print(prettyjson(fs_decrypt(sys.stdin.buffer.read())))
+
+
+if __name__ == '__main__':
+    # Print formatted output
+    print(prettyjson(decrypt(sys.stdin.buffer.read())))
