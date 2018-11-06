@@ -37,13 +37,41 @@ import sys
 import base64
 import json
 
-# PyPI: pycrypto, v2.5+ required for PBKDF2 support
-import Crypto.Cipher.AES as AES
-import Crypto.Protocol.KDF as KDF
+
+import Crypto.Cipher.AES as AES  # PyPI: pip install pycrypto
 
 
-# b64decode(): bytes -> bytes both PY2 and PY3
 PY3 = sys.version_info[0] >= 3
+
+IV  = b'tu89geji340t89u2'
+KEY = b'A7CA9F3366D892C2F0BEF417341CA971B69AE9F7BACCCFFCF43C62D1D7D021F9'
+CIPHER = AES.new(base64.b16decode(KEY), AES.MODE_CBC, IV)
+
+
+def fs_key():
+    '''
+    Alternate ways to calculate AES key for CIPHER using PASSWORD and SALT
+    This function is purely optional, kept only for historical purposes
+
+    Constants taken from disassembled game source code:
+    https://androidrepublic.org/threads/6181
+
+    IV is used as both PBKDF2 key salt and AES IV.
+    Its value was very likely chosen copying from an old SO answer
+    https://stackoverflow.com/revisions/10177020/2
+    '''
+
+    SALT = IV
+    PASSWORD = base64.b64encode(b'PlayerData')[:8]  # b'UGxheWVy'
+    KEYSIZE  = 32
+
+    # Method 1: PBKDF2() from pycrypto v2.5+
+    import Crypto.Protocol.KDF as KDF
+    return KDF.PBKDF2(PASSWORD, SALT, KEYSIZE)
+
+    # Method 2: pbkdf2_hmac() from Standard Library
+    import hashlib
+    return hashlib.pbkdf2_hmac('sha1', PASSWORD, SALT, 1000, KEYSIZE)
 
 
 def fs_decrypt(savedata):
@@ -52,33 +80,10 @@ def fs_decrypt(savedata):
 
     @savedata: binary save game data (str in Python 2, bytes in Python 3)
     @output  : JSON text, one-liner  (str in both Python 2 and 3)
-
-    Constants taken from disassembled game source code:
-    https://androidrepublic.org/threads/6181
-
-    IVSALT is used as both PBKDF2 key salt and AES IV.
-    Its value was very likely chosen copying from an old SO answer
-    https://stackoverflow.com/revisions/10177020/2
     '''
 
-    SALTIV   = b'tu89geji340t89u2'
-    PASSWORD = base64.b64encode(b'PlayerData')[:8]  # b'UGxheWVy'
-    KEYSIZE  = 32
-
-    # Derive the key from password and salt
-    try:
-        key = KDF.PBKDF2(PASSWORD, SALTIV, KEYSIZE)
-    except AttributeError:
-        # pycrypto < v2.5, without PBKDF2, so use a pre-computed key.
-        # Could use hashlib.pbkdf2_hmac('sha1', PASSWORD, SALTIV, 1000, KEYSIZE)
-        key = (b'\xa7\xca\x9f3f\xd8\x92\xc2\xf0\xbe\xf4\x174\x1c\xa9q'
-               b'\xb6\x9a\xe9\xf7\xba\xcc\xcf\xfc\xf4<b\xd1\xd7\xd0!\xf9')
-
-    # Use AES in Block cipher mode with key and IV
-    aes = AES.new(key, AES.MODE_CBC, SALTIV)
-
     # Decode and decrypt the save data
-    data = aes.decrypt(base64.b64decode(savedata))
+    data = CIPHER.decrypt(base64.b64decode(savedata))
 
     # Remove trailing padding (N bytes of value N) and convert to string
     if PY3:
