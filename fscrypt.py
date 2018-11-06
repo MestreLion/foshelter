@@ -65,6 +65,20 @@ License: GPLv3 or later, at your choice. See <http://www.gnu.org/licenses/gpl>
 """
 
 
+class FSJSONEnc(json.JSONEncoder):
+    """Stripped-down JSONEncoder to format floats with trailing zeroes"""
+    def iterencode(self, o, _one_shot=False):
+        def floatstr(o):
+            return '{0:.02f}'.format(o)
+
+        _iterencode = json.encoder._make_iterencode(
+            None, self.default, json.encoder.encode_basestring_ascii,
+            self.indent, floatstr, self.key_separator, self.item_separator,
+            self.sort_keys, self.skipkeys, _one_shot)
+
+        return _iterencode(o, 0)
+
+
 def decrypt(savedata: str) -> collections.OrderedDict:
     """Decrypt a Fallout Shelter save game data to a Dictionary."""
 
@@ -109,23 +123,7 @@ def loadjson(data: str) -> collections.OrderedDict:
     return json.loads(data, object_pairs_hook=collections.OrderedDict)
 
 
-class FSJSONEnc(json.JSONEncoder):
-    """Custom JSONEncoder to format floats with trailing zeroes"""
-    def iterencode(self, o, _one_shot=False):
-        def floatstr(o):
-            return '{0:.02f}'.format(o)
-
-        _iterencode = json.encoder._make_iterencode(
-            None, self.default, json.encoder.encode_basestring_ascii,
-            self.indent, floatstr, self.key_separator, self.item_separator,
-            self.sort_keys, self.skipkeys, _one_shot)
-
-        return _iterencode(o, 0)
-
-
-
-
-if __name__ == '__main__':
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description=__doc__,
         epilog=COPYRIGHT,
@@ -138,7 +136,7 @@ if __name__ == '__main__':
                        help="Encrypt JSON to save data.")
     parser.add_argument("-s", "--sort-keys", action="store_true", dest="sort",
                         help="Sort JSON keys on decryption.")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     data = sys.stdin.read()
     if args.decrypt:
@@ -147,3 +145,12 @@ if __name__ == '__main__':
         out = encrypt(loadjson(data))
 
     sys.stdout.write(out)
+
+
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except (KeyboardInterrupt, BrokenPipeError):
+        pass
