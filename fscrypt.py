@@ -65,7 +65,7 @@ License: GPLv3 or later, at your choice. See <http://www.gnu.org/licenses/gpl>
 """
 
 
-def decrypt(savedata: str) -> dict:
+def decrypt(savedata: str) -> collections.OrderedDict:
     """Decrypt a Fallout Shelter save game data to a Dictionary."""
 
     # Decode and decrypt the save data
@@ -92,7 +92,8 @@ def encrypt(obj: dict) -> str:
     return base64.b64encode(CIPHER.encrypt(data)).decode('ascii')
 
 
-def dumpjson(obj:dict, pretty: bool = False, sort: bool = False) -> str:
+def dumpjson(obj: dict, pretty: bool = False, sort: bool = False) -> str:
+    """Wrap json.dumps() using custom float encoder and pretty-print preset"""
     if pretty:
         kwargs= dict(sort_keys=sort, indent=4)
         newline = '\n'
@@ -103,11 +104,13 @@ def dumpjson(obj:dict, pretty: bool = False, sort: bool = False) -> str:
     return json.dumps(obj, cls=FSJSONEnc, **kwargs) + newline
 
 
-def loadjson(data: str) -> dict:
+def loadjson(data: str) -> collections.OrderedDict:
+    """Wrap json.loads() preserving key order"""
     return json.loads(data, object_pairs_hook=collections.OrderedDict)
 
 
 class FSJSONEnc(json.JSONEncoder):
+    """Custom JSONEncoder to format floats with trailing zeroes"""
     def iterencode(self, o, _one_shot=False):
         def floatstr(o):
             return '{0:.02f}'.format(o)
