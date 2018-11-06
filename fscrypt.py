@@ -93,8 +93,8 @@ def encrypt(obj: dict) -> str:
     return base64.b64encode(CIPHER.encrypt(data)).decode('ascii')
 
 
-def prettyjson(obj: dict) -> str:
-    return json.dumps(obj, sort_keys=True, indent=4, separators=(',',':')) + '\n'
+def prettyjson(obj:dict, sort:bool=False) -> str:
+    return json.dumps(obj, sort_keys=sort, indent=4, separators=(',',':')) + '\n'
 
 
 
@@ -107,14 +107,16 @@ if __name__ == '__main__':
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-d", "--decrypt", action="store_true", default=True,
-                        help="Decrypt save data to formatted JSON [Default]")
-    group.add_argument("-e", "--encrypt", dest='decrypt', action="store_false",
-                        help="Encrypt JSON to save data")
+                       help="Decrypt save data to formatted JSON. [Default]")
+    group.add_argument("-e", "--encrypt", action="store_false", dest="decrypt",
+                       help="Encrypt JSON to save data.")
+    parser.add_argument("-s", "--sort-keys", action="store_true", dest="sort",
+                        help="Sort JSON keys on decryption.")
     args = parser.parse_args()
 
     data = sys.stdin.read()
     if args.decrypt:
-        out = prettyjson(decrypt(data))
+        out = prettyjson(decrypt(data), sort=args.sort)
     else:
         out = encrypt(json.loads(data, object_pairs_hook=collections.OrderedDict))
 
