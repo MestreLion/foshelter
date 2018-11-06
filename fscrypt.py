@@ -29,6 +29,18 @@
 
     Usage:
         ./fscrypt3 < Vault1.save > Vault1.json
+
+    Constants taken from disassembled game source code:
+    https://androidrepublic.org/threads/6181
+
+    IV is used as both PBKDF2 key salt and AES IV.
+    Its value was very likely chosen copying from an old StackOverflow answer
+    https://stackoverflow.com/revisions/10177020/2
+
+    KEY is a precomputed AES key, stored here as a base16-encoded string (ASCII
+    hex format), and can be generated using the IV and a hardcoded password:
+    PASSWORD = base64.b64encode(b'PlayerData')[:8]  # or simply b'UGxheWVy'
+    See previous commits on how to manually generate it
 """
 
 
@@ -36,39 +48,12 @@ import sys
 import base64
 import json
 
-
 import Crypto.Cipher.AES as AES  # PyPI: pip install pycrypto
 
 
 IV  = b'tu89geji340t89u2'
 KEY = b'A7CA9F3366D892C2F0BEF417341CA971B69AE9F7BACCCFFCF43C62D1D7D021F9'
 CIPHER = AES.new(base64.b16decode(KEY), AES.MODE_CBC, IV)
-
-
-def fs_key():
-    '''
-    Alternate ways to calculate AES key for CIPHER using PASSWORD and SALT
-    This function is purely optional, kept only for historical purposes
-
-    Constants taken from disassembled game source code:
-    https://androidrepublic.org/threads/6181
-
-    IV is used as both PBKDF2 key salt and AES IV.
-    Its value was very likely chosen copying from an old SO answer
-    https://stackoverflow.com/revisions/10177020/2
-    '''
-
-    SALT = IV
-    PASSWORD = base64.b64encode(b'PlayerData')[:8]  # b'UGxheWVy'
-    KEYSIZE  = 32
-
-    # Method 1: PBKDF2() from pycrypto v2.5+
-    import Crypto.Protocol.KDF as KDF
-    return KDF.PBKDF2(PASSWORD, SALT, KEYSIZE)
-
-    # Method 2: pbkdf2_hmac() from Standard Library
-    import hashlib
-    return hashlib.pbkdf2_hmac('sha1', PASSWORD, SALT, 1000, KEYSIZE)
 
 
 def fs_decrypt(savedata):
