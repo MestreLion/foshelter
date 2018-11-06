@@ -56,22 +56,22 @@ KEY = b'A7CA9F3366D892C2F0BEF417341CA971B69AE9F7BACCCFFCF43C62D1D7D021F9'
 CIPHER = AES.new(base64.b16decode(KEY), AES.MODE_CBC, IV)
 
 
-def decrypt(savedata: bytes) -> dict:
+def decrypt(savedata: str) -> dict:
     '''
     Decrypts a Fallout Shelter save game data to a Dictionary
     '''
 
     # Decode and decrypt the save data
-    data = CIPHER.decrypt(base64.b64decode(savedata))
+    data = CIPHER.decrypt(base64.b64decode(savedata.encode('ascii')))
 
-    # Remove trailing padding (N bytes of value N) and convert to string
-    data = data[:-data[-1]].decode('ascii')
+    # Remove trailing padding (N bytes of value N)
+    data = data[:-data[-1]]
 
     # Deserialize JSON string to Python dict object
-    return json.loads(data, strict=False)
+    return json.loads(data.decode('ascii'))
 
 
-def encrypt(obj: dict) -> bytes:
+def encrypt(obj: dict) -> str:
     '''
     Encrypt a Dictionary to a Fallout Shelter save game data
     '''
@@ -84,7 +84,7 @@ def encrypt(obj: dict) -> bytes:
     data += pad * bytes((pad,))
 
     # Encrypt and encode
-    return base64.b64encode(CIPHER.encrypt(data))
+    return base64.b64encode(CIPHER.encrypt(data)).decode('ascii')
 
 
 def prettyjson(obj: dict) -> str:
@@ -95,5 +95,5 @@ def prettyjson(obj: dict) -> str:
 
 if __name__ == '__main__':
     # Print formatted output
-    #print(prettyjson(decrypt(sys.stdin.buffer.read())))
-    sys.stdout.write(encrypt(json.loads(sys.stdin.buffer.read().decode('ascii'))).decode('ascii'))
+    #print(prettyjson(decrypt(sys.stdin.read())))
+    sys.stdout.write(encrypt(json.loads(sys.stdin.read())))
