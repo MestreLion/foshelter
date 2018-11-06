@@ -28,7 +28,7 @@
     Currently reads binary data from stdin and output formatted JSON to stdout
 
     Usage:
-        ./fscrypt.py < Vault1.save > Vault1.json
+        python3 fscrypt.py < Vault1.save > Vault1.json
 
     Constants taken from disassembled game source code:
     https://androidrepublic.org/threads/6181
@@ -58,7 +58,7 @@ CIPHER = AES.new(base64.b16decode(KEY), AES.MODE_CBC, IV)
 
 def decrypt(savedata: bytes) -> dict:
     '''
-    Decrypts a Fallout Shelter save game data
+    Decrypts a Fallout Shelter save game data to a Dictionary
     '''
 
     # Decode and decrypt the save data
@@ -71,6 +71,22 @@ def decrypt(savedata: bytes) -> dict:
     return json.loads(data, strict=False)
 
 
+def encrypt(obj: dict) -> bytes:
+    '''
+    Encrypt a Dictionary to a Fallout Shelter save game data
+    '''
+
+    # Serialize to a one-line JSON byte string
+    data = json.dumps(obj).encode('ascii')
+
+    # Add padding
+    pad = 16 - len(data) % 16
+    data += pad * bytes((pad,))
+
+    # Encrypt and encode
+    return base64.b64encode(CIPHER.encrypt(data))
+
+
 def prettyjson(obj: dict) -> str:
     return json.dumps(obj, sort_keys=True, indent=4, separators=(',',':'))
 
@@ -79,4 +95,5 @@ def prettyjson(obj: dict) -> str:
 
 if __name__ == '__main__':
     # Print formatted output
-    print(prettyjson(decrypt(sys.stdin.buffer.read())))
+    #print(prettyjson(decrypt(sys.stdin.buffer.read())))
+    sys.stdout.write(encrypt(json.loads(sys.stdin.buffer.read().decode('ascii'))).decode('ascii'))
