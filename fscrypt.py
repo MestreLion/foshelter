@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 #    Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
 #
@@ -40,8 +39,6 @@ import json
 
 import Crypto.Cipher.AES as AES  # PyPI: pip install pycrypto
 
-
-PY3 = sys.version_info[0] >= 3
 
 IV  = b'tu89geji340t89u2'
 KEY = b'A7CA9F3366D892C2F0BEF417341CA971B69AE9F7BACCCFFCF43C62D1D7D021F9'
@@ -86,10 +83,7 @@ def fs_decrypt(savedata):
     data = CIPHER.decrypt(base64.b64decode(savedata))
 
     # Remove trailing padding (N bytes of value N) and convert to string
-    if PY3:
-        data = data[:-data[-1]].decode('ascii')
-    else:
-        data = data[:-ord(data[-1])]
+    data = data[:-data[-1]].decode('ascii')
 
     return data
 
@@ -101,4 +95,4 @@ def prettyjson(data):
 
 # Print formatted output
 # b64decode() on PY2 and 3 takes bytes on input, so need a binary stdin
-print(prettyjson(fs_decrypt((sys.stdin.buffer if PY3 else sys.stdin).read())))
+print(prettyjson(fs_decrypt((sys.stdin.buffer).read())))
