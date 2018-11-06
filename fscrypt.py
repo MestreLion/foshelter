@@ -75,15 +75,14 @@ def decrypt(savedata: str) -> dict:
     data = data[:-data[-1]]
 
     # Deserialize JSON string to Python dict object
-    return json.loads(data.decode('ascii'),
-                      object_pairs_hook=collections.OrderedDict)
+    return loadjson(data.decode('ascii'))
 
 
 def encrypt(obj: dict) -> str:
     """Encrypt a Dictionary to a Fallout Shelter save game data."""
 
     # Serialize to a one-line JSON byte string
-    data = json.dumps(obj).encode('ascii')
+    data = dumpjson(obj).encode('ascii')
 
     # Add PKCS#7 padding
     pad = 16 - len(data) % 16
@@ -93,8 +92,32 @@ def encrypt(obj: dict) -> str:
     return base64.b64encode(CIPHER.encrypt(data)).decode('ascii')
 
 
-def prettyjson(obj:dict, sort:bool=False) -> str:
-    return json.dumps(obj, sort_keys=sort, indent=4, separators=(',',':')) + '\n'
+def dumpjson(obj:dict, pretty: bool = False, sort: bool = False) -> str:
+    if pretty:
+        kwargs= dict(sort_keys=sort, indent=4)
+        newline = '\n'
+    else:
+        kwargs = dict(separators=(',',':'))
+        newline = ''
+
+    return json.dumps(obj, cls=FSJSONEnc, **kwargs) + newline
+
+
+def loadjson(data: str) -> dict:
+    return json.loads(data, object_pairs_hook=collections.OrderedDict)
+
+
+class FSJSONEnc(json.JSONEncoder):
+    def iterencode(self, o, _one_shot=False):
+        def floatstr(o):
+            return '{0:.02f}'.format(o)
+
+        _iterencode = json.encoder._make_iterencode(
+            None, self.default, json.encoder.encode_basestring_ascii,
+            self.indent, floatstr, self.key_separator, self.item_separator,
+            self.sort_keys, self.skipkeys, _one_shot)
+
+        return _iterencode(o, 0)
 
 
 
@@ -116,8 +139,8 @@ if __name__ == '__main__':
 
     data = sys.stdin.read()
     if args.decrypt:
-        out = prettyjson(decrypt(data), sort=args.sort)
+        out = dumpjson(decrypt(data), pretty=True, sort=args.sort)
     else:
-        out = encrypt(json.loads(data, object_pairs_hook=collections.OrderedDict))
+        out = encrypt(loadjson(data))
 
     sys.stdout.write(out)
