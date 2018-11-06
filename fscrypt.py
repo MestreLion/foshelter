@@ -42,7 +42,7 @@ import base64
 import json
 import argparse
 
-import Crypto.Cipher.AES as AES  # PyPI: pip install pycrypto
+import Crypto.Cipher.AES as AES  # PyPI: pip install pycryptodome
 
 
 # IV is used as both PBKDF2 key salt and AES IV.
