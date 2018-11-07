@@ -1,8 +1,10 @@
 __pycache__/
 *.pyc
+
+data/
 *.sav
+*.bkp
 
 *.json
-*.bkp
 *.csv
 *.zip
