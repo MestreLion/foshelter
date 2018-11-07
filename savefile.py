@@ -25,9 +25,11 @@ Steam:   C:\\Users\\<YOURUSERNAME>\\AppData\\Local\\FalloutShelter
 Decrypts binary data read from stdin outputting formatted JSON   to stdout
 Encrypts JSON   data read from stdin outputting binary save data to stdout
 
+Produces bitwise identical save data on Decryption->Encryption cycles
+
 Examples:
-    python3 fscrypt.py    < Vault1.sav  > Vault1.json  # Decrypt by default
-    python3 fscrypt.py -e < Vault1.json > Vault1.sav
+    python3 savefile.py    < Vault1.sav  > Vault1.json  # Decrypt by default
+    python3 savefile.py -e < Vault1.json > Vault1.sav
 
 Constants taken from disassembled game source code:
 https://androidrepublic.org/threads/6181
