@@ -84,8 +84,10 @@ def decrypt(savedata: str) -> collections.OrderedDict:
     # Decode and decrypt the save data
     data = CIPHER.decrypt(base64.b64decode(savedata.encode('ascii')))
 
-    # Remove PKCS#7 trailing padding (N bytes of value N)
-    data = data[:-data[-1]]
+    # Remove tailing padding, if any
+    # PKCS#7 padding is N bytes of value N, unpadded data is data[:-data[-1]]
+    if data[-1] != b'}':
+        data = data.rstrip(data[-1:])
 
     # Deserialize JSON string to Python dict object
     return loadjson(data.decode('ascii'))
