@@ -2,9 +2,9 @@
 # Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
 # License: GPLv3 or later, at your choice. See <http://www.gnu.org/licenses/gpl>
 
-'''
+"""
     Fallout Shelter Dwellers info
-'''
+"""
 
 import sys
 import os.path
@@ -27,10 +27,10 @@ log = logging.getLogger(__name__)
 
 
 def total_hp(total_endurance, level=0):
-    '''
+    """
     Total Hit Points at level based on total endurance points gained
     https://www.reddit.com/r/foshelter/comments/3jmnhy
-    '''
+    """
     if not level:
         level = MAX_LEVEL
 
@@ -38,7 +38,7 @@ def total_hp(total_endurance, level=0):
 
 
 def endurance_points(l1, e1, l2=0, e2=0, level=0):
-    '''
+    """
     Total Endurance Points gained at level based on leveling pattern
 
     Pattern is: Leveled from level 1 to l1 with e1 endurance, then until level
@@ -46,7 +46,7 @@ def endurance_points(l1, e1, l2=0, e2=0, level=0):
 
     If falsy, `l2` is set to `l1`, effectively ignoring it along with `e2`
     If falsy, `level` is considered to be MAX_LEVEL
-    '''
+    """
     if not l2:
         l2=l1
 
@@ -66,7 +66,7 @@ def endurance_points(l1, e1, l2=0, e2=0, level=0):
 
 
 def e17_equiv(l1, e1, l2=0, e2=0):
-    '''
+    """
     E17-equivalent level based on leveling pattern
 
     Outputs the level that yields the same Endurance Points, hence total HP,
@@ -98,7 +98,7 @@ def e17_equiv(l1, e1, l2=0, e2=0):
     MAX_END afterwards until MAX_LEVEL.
 
     If falsy, `l2` is set to `l1`, effectively ignoring it along with `e2`
-    '''
+    """
     if not l2:
         l2 = l1
 
@@ -128,7 +128,10 @@ def e17_equiv(l1, e1, l2=0, e2=0):
 
 
 
-class FSException(Exception): pass
+
+class FSException(Exception):
+    pass
+
 
 
 class Dweller():
@@ -195,8 +198,9 @@ class Dweller():
 
 
     def _parse_einfo(self, einfo):
-        ''''
+        """
         Parse the Endurance Information, a way to describe a leveling pattern.
+        Return the E17-equivalent level of that information. See e17_equiv()
         Formats are:
         xx   : E10 (FULL_END) until level xx, and E17 (MAX_END) afterwards
         xxyy : E10 until level xx, E15 (MID_END) until level yy, E17 afterwards
@@ -206,7 +210,7 @@ class Dweller():
         Exx  : Exx* all the way from level 1 to 50 (MAXLEVEL). Same as 1Exx
         All formats but 'xxyy' allow single digits to either or both xx and yy
         * : When using E notation, a single-digit Ez actually means E(10+z)
-        '''
+        """
 
         if not einfo:
             return 0
