@@ -6,10 +6,5 @@
     Package setup
 """
 
-# Add dummy Null Handler so in-package logging does fail
-import logging as _logging
-_logging.getLogger(__name__).addHandler(_logging.NullHandler())
-
-
 class FSException(Exception):
     pass
