@@ -13,6 +13,8 @@ import logging
 import re
 import argparse
 
+from . import orm, FSException
+
 
 MAX_LEVEL = 50
 
@@ -129,12 +131,7 @@ def e17_equiv(l1, e1, l2=0, e2=0):
 
 
 
-class FSException(Exception):
-    pass
-
-
-
-class Dweller():
+class Dweller(orm.Entity):
 
     re_einfo = re.compile(
         r'\b(?P<einfo>'
@@ -146,45 +143,54 @@ class Dweller():
     re_job = re.compile(r'^([A-Z]([0-9]{2}|[A-Z]{2}|\?\?)) +')
 
 
-    @classmethod
-    def from_dict(cls, d):
-        return cls(
-            d['serializeId'],
-            '{name} {lastName}'.format(**d),
-            d['experience']['currentLevel'],
-            d['health']['maxHealth'],
-        )
+    def __init__(self, data: dict, **kw):
+        super().__init__(data, **kw)
 
+        self.ID    = data['serializeId']
+        self.level = data['experience']['currentLevel']
+        self.hp    = data['health']['maxHealth']
 
-    def __init__(self, ID, name, level, hp):
-        self.id = ID
-        self.name = name
-        self.hp = hp
-        self.level = level
-
-        self.job      = self._job(self.name)
-        self.newcomer = not self.job
         self.erating  = self._e17equiv()
-        self.einfo    = self._einfo(self.name)
-        self.e17info  = self._parse_einfo(self.einfo)
-        self.badinfo  = self.einfo and abs(self.e17info - self.erating) >= 1
 
 
-    def _job(self, name):
-        m = re.search(self.re_job, name)
+    @property
+    def name(self):
+        return '{name} {lastName}'.format(**self._data)
+
+    @name.setter
+    def name(self, v: str):
+        assert isinstance(v, str)
+        if not v: return  # silently ignore, by design
+        self._data['name'], _, self._data['lastName'] = v.strip().partition(' ')
+
+
+    @property
+    def job(self):
+        m = re.search(self.re_job, self.name)
         if m:
             return m.group(1)
 
 
-    def _newcomer(self, name):
-        m = re.search(self.re_job, name)
-        return False if m else True
+    @property
+    def newcomer(self):
+        m = re.search(self.re_job, self.name)
+        return not bool(m)
 
 
-    def _einfo(self, name):
-        m = re.search(self.re_einfo, name)
+    @property
+    def einfo(self):
+        m = re.search(self.re_einfo, self.name)
         if m:
             return m.group('einfo')
+
+    @property
+    def e17info(self):
+        return self._parse_einfo(self.einfo)
+
+
+    @property
+    def badinfo(self):
+        return self.einfo and abs(self.e17info - self.erating) >= 1
 
 
     def _e17equiv(self):
@@ -256,21 +262,15 @@ class Dweller():
 
 
     def __repr__(self):
-        return '<{name}>'.format(**vars(self))
+        return '<Dweller({ID:3d}, {level:2d}, {hp}, {0.name})>'.format(self, **vars(self))
 
 
     def __str__(self):
-        return ('\t'.join((
-            '{badinfo}',
-            '{id:3d}',
-            '{level:2d}',
-            '{hp:.1f}',
-            '{erating:4.1f}',
-            '{e17info:4.1f}',
-            '{job}',
-            '{newcomer}',
-            '{name}',
-        )).format(**vars(self)))
+        return self.name
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -309,7 +309,28 @@ if __name__ == '__main__':
                   args.path)
         sys.exit(1)
 
-    dwellers = [Dweller.from_dict(_) for _ in data['dwellers']['dwellers']]
+    dwellers = [Dweller.from_data(_) for _ in data['dwellers']['dwellers']]
 
+    print('\t'.join((
+        'BadInfo',
+        ' ID',
+        'Level',
+        'MaxHP',
+        'E17Real',
+        'E17Info',
+        'Job',
+        'New',
+        'Full Name',
+    )))
     for d in dwellers:
-        print(d)
+        print('\t'.join((
+            '{0.badinfo}',
+            '{0.ID:3d}',
+            '{0.level:2d}',
+            '{0.hp:.1f}',
+            '{0.erating:4.1f}',
+            '{0.e17info:4.1f}',
+            '{0.job}',
+            '{0.newcomer}',
+            '{0.name}',
+        )).format(d))
