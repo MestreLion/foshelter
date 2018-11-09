@@ -57,7 +57,7 @@ def get_options() -> dict:
     paths = tuple(os.path.realpath(os.path.join(path, 'config.ini')) for path in
                   (os.path.join(os.path.dirname(__file__), '..'), configdir))
 
-    cp = configparser.ConfigParser()
+    cp = configparser.ConfigParser(inline_comment_prefixes='#')
     config = cp.read(paths, encoding='utf-8')
 
     if not config:
