@@ -67,11 +67,11 @@ class _FSJSONEnc(json.JSONEncoder):
         return _iterencode(o, 0)
 
 
-def decrypt(savedata: str) -> collections.OrderedDict:
+def decrypt(savedata: bytes) -> collections.OrderedDict:
     """Decrypt a Fallout Shelter save game data to a Dictionary."""
 
     # Decode and decrypt the save data
-    data = CIPHER.decrypt(base64.b64decode(savedata.encode('ascii')))
+    data = CIPHER.decrypt(base64.b64decode(savedata))  # also accepts ASCII str
 
     # Remove tailing padding, if any
     # PKCS#7 padding is N bytes of value N, unpadded data is data[:-data[-1]]
@@ -82,7 +82,7 @@ def decrypt(savedata: str) -> collections.OrderedDict:
     return _loadjson(data.decode('ascii'))
 
 
-def encrypt(obj: dict) -> str:
+def encrypt(obj: dict) -> bytes:
     """Encrypt a Dictionary to a Fallout Shelter save game data."""
 
     # Serialize to a one-line JSON byte string
@@ -93,7 +93,7 @@ def encrypt(obj: dict) -> str:
     data += pad * bytes((pad,))
 
     # Encrypt and encode
-    return base64.b64encode(CIPHER.encrypt(data)).decode('ascii')
+    return base64.b64encode(CIPHER.encrypt(data))
 
 
 def _dumpjson(obj: dict, pretty: bool = False, sort: bool = False) -> str:
@@ -132,7 +132,7 @@ def _main(argv=None):
     if args.decrypt:
         out = _dumpjson(decrypt(data), pretty=True, sort=args.sort)
     else:
-        out = encrypt(_loadjson(data))
+        out = encrypt(_loadjson(data)).decode('ascii')
 
     sys.stdout.write(out)
 
