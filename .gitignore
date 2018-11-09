@@ -2,9 +2,12 @@ __pycache__/
 *.pyc
 
 data/
+saves/
 *.sav
 *.bkp
 
 *.json
 *.csv
 *.zip
+
+*.ini
