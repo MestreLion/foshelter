@@ -53,7 +53,7 @@ License: GPLv3 or later, at your choice. See <http://www.gnu.org/licenses/gpl>
 """
 
 
-class FSJSONEnc(json.JSONEncoder):
+class _FSJSONEnc(json.JSONEncoder):
     """Stripped-down JSONEncoder to format floats with trailing zeroes"""
     def iterencode(self, o, _one_shot=False):
         def floatstr(o):
@@ -79,14 +79,14 @@ def decrypt(savedata: str) -> collections.OrderedDict:
         data = data.rstrip(data[-1:])
 
     # Deserialize JSON string to Python dict object
-    return loadjson(data.decode('ascii'))
+    return _loadjson(data.decode('ascii'))
 
 
 def encrypt(obj: dict) -> str:
     """Encrypt a Dictionary to a Fallout Shelter save game data."""
 
     # Serialize to a one-line JSON byte string
-    data = dumpjson(obj).encode('ascii')
+    data = _dumpjson(obj).encode('ascii')
 
     # Add PKCS#7 padding
     pad = 16 - len(data) % 16
@@ -96,7 +96,7 @@ def encrypt(obj: dict) -> str:
     return base64.b64encode(CIPHER.encrypt(data)).decode('ascii')
 
 
-def dumpjson(obj: dict, pretty: bool = False, sort: bool = False) -> str:
+def _dumpjson(obj: dict, pretty: bool = False, sort: bool = False) -> str:
     """Wrap json.dumps() using custom float encoder and pretty-print preset"""
     if pretty:
         kwargs= dict(sort_keys=sort, indent=4)
@@ -105,15 +105,15 @@ def dumpjson(obj: dict, pretty: bool = False, sort: bool = False) -> str:
         kwargs = dict(separators=(',',':'))
         newline = ''
 
-    return json.dumps(obj, cls=FSJSONEnc, **kwargs) + newline
+    return json.dumps(obj, cls=_FSJSONEnc, **kwargs) + newline
 
 
-def loadjson(data: str) -> collections.OrderedDict:
+def _loadjson(data: str) -> collections.OrderedDict:
     """Wrap json.loads() preserving key order"""
     return json.loads(data, object_pairs_hook=collections.OrderedDict)
 
 
-def main(argv=None):
+def _main(argv=None):
     parser = argparse.ArgumentParser(
         description=__doc__,
         epilog=COPYRIGHT,
@@ -130,9 +130,9 @@ def main(argv=None):
 
     data = sys.stdin.read()
     if args.decrypt:
-        out = dumpjson(decrypt(data), pretty=True, sort=args.sort)
+        out = _dumpjson(decrypt(data), pretty=True, sort=args.sort)
     else:
-        out = encrypt(loadjson(data))
+        out = encrypt(_loadjson(data))
 
     sys.stdout.write(out)
 
@@ -141,6 +141,6 @@ def main(argv=None):
 
 if __name__ == '__main__':
     try:
-        sys.exit(main(sys.argv[1:]))
+        sys.exit(_main(sys.argv[1:]))
     except (KeyboardInterrupt, BrokenPipeError):
         pass
