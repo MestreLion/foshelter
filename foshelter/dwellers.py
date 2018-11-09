@@ -271,9 +271,15 @@ class Dweller(orm.Entity):
 
 
 
+class Dwellers(orm.EntityList):
+    EntityClass = Dweller
+
+
 
 
 if __name__ == '__main__':
+    DATADIR = os.path.join(os.path.dirname(__file__), '..', 'data')
+
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-q', '--quiet',
@@ -290,8 +296,7 @@ if __name__ == '__main__':
 
     parser.add_argument(nargs='?',
                         metavar='JSONFILE',
-                        default=os.path.join(os.path.dirname(__file__),
-                                             'Vault1.json'),
+                        default=os.path.join(DATADIR, 'Vault1.json'),
                         dest='path',
                         help="Decrypted save game data in JSON format."
                             " [Default: %(default)s")
@@ -309,7 +314,7 @@ if __name__ == '__main__':
                   args.path)
         sys.exit(1)
 
-    dwellers = [Dweller.from_data(_) for _ in data['dwellers']['dwellers']]
+    dwellers = Dwellers.from_data(data['dwellers']['dwellers'])
 
     print('\t'.join((
         'BadInfo',
