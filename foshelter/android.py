@@ -33,7 +33,7 @@ def get_filename(vault: int) -> str:
 
 
 
-def read_adb(vault: int) -> bytes:
+def adb_read(vault: int) -> bytes:
     # https://github.com/google/python-adb
     if not adb:
         raise FSException("adb package is not available")
@@ -49,21 +49,21 @@ def read_adb(vault: int) -> bytes:
     return device.Pull(os.path.join('/mnt/sdcard', GAMEDIR, get_filename(vault)))
 
 
-def write_adb(vault: int, data: bytes) -> None:
+def adb_write(vault: int, data: bytes) -> None:
     pass
 
 
 
 
-def read_ftp(vault: int, **ftp_options) -> bytes:
-    return _readwrite_ftp(vault, True, None, **ftp_options)
+def ftp_read(vault: int, **ftp_options) -> bytes:
+    return _ftp_readwrite(vault, True, None, **ftp_options)
 
 
-def write_ftp(vault: int, data: bytes, **ftp_options) -> None:
-    _readwrite_ftp(vault, False, data, **ftp_options)
+def ftp_write(vault: int, data: bytes, **ftp_options) -> None:
+    _ftp_readwrite(vault, False, data, **ftp_options)
 
 
-def _readwrite_ftp(vault, read, data, **ftp_options):
+def _ftp_readwrite(vault, read, data, **ftp_options):
     if not ftp_options['hostname']:
         raise FSException("FTP hostname is blank, check your settings?")
 
@@ -101,12 +101,12 @@ if __name__ == '__main__':
 
     if method == 'ftp':
         try:
-            data = read_ftp(vault, **options['ftp'])
+            data = ftp_read(vault, **options['ftp'])
             print("{0}, {1} bytes: {2}...".format(
                     get_filename(vault),
                     len(data),
                     data[:80]))
-            write_ftp(4, data, **options['ftp'])
+            ftp_write(4, data, **options['ftp'])
         except OSError as e:
             if e.errno not in (111, 113):  # Connection Refused, No route to host
                 raise
@@ -116,7 +116,7 @@ if __name__ == '__main__':
             log.error(e)
 
     elif method == 'adb':
-        pass
+        print(adb_read(1)[:80])
 
     else:
         log.error("Invalid or blank Android method: %s", method)
