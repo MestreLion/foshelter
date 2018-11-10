@@ -50,29 +50,36 @@ def adb_write(slot: int, data: bytes) -> None:
     pass
 
 
-def ftp_get(slot: int, path: str = None, **ftp_options) -> str:
+
+
+def ftp_get(slot: int, target: str = None, **ftp_options) -> str:
     """
-    Download a game save file from an Android FTP server to a local file
-    Save file as `path` or as 'VaultX.sav' in current directory. See ftp_read()
-    for documentation on other parameters.
+    Download a game save file from an Android FTP server to a local file.
+
+    If `path` is a directory, save to that directory using game save file name.
+    If blank save to current directory, else use it as full file and path name.
+
+    See ftp_read() for documentation on other parameters.
+
     Return the saved local file full path, as a convenience.
     """
-    if not path:
-        path = u.savename(slot)
+    target = u.localpath(slot, target)
     data = ftp_read(slot, **ftp_options)
-    open(path, 'wb').write(data)
-    return path
+    with open(target, 'wb') as fd:
+        fd.write(data)
+    return target
 
 
-def ftp_put(slot: int, path: str = None, **ftp_options) -> str:
+def ftp_put(slot: int, source: str = None, **ftp_options) -> str:
     """
     Upload a local file to an Android FTP server as a game save file
-    Use `path` file or 'VaultX.sav' in current directory. See ftp_write() for
+
+    Use `source` file or 'VaultX.sav' in current directory. See ftp_write() for
     documentation on return value and other parameters.
     """
-    if not path:
-        path = u.savename(slot)
-    data = open(path, 'rb').read()
+    source = u.localpath(slot, source)
+    with open(source, 'rb') as fd:
+        data = fd.read()
     return ftp_write(slot, data, **ftp_options)
 
 
@@ -122,7 +129,8 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
     This is not meant to be called directly. Use ftp_read()/ftp_write() instead
     See their respective documentation for parameters and return value
     """
-    options = settings.get_options()['ftp'].update(ftp_options)
+    options = settings.get_options()['ftp']
+    options.update(ftp_options)
 
     if not options['hostname']:
         raise u.FSException("FTP hostname is blank, check your settings?")
