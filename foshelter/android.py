@@ -157,9 +157,7 @@ def ftp_read(slot: int, **ftp_options) -> bytes:
       raises an exception.
     - 'port', if 0 or otherwise falsy, uses the default FTP port, 21.
     - if 'username' is blank, use anonymous FTP access and ignore 'password'
-    - 'debug', if truthy, print FTP messages to stdout. Note it does NOT print
-      to stderr, unfortunately, so it can and WILL cause a mess if return data
-      is also printed, specially if output is redirected to file.
+    - 'debug', if truthy, print FTP messages to stderr.
     """
     return _ftp_readwrite(slot, True, None, **ftp_options)
 
@@ -187,6 +185,7 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
     """
     options = settings.get_options()['ftp']
     options.update(ftp_options)
+    debug = options['debug']
 
     if not options['hostname']:
         raise u.FSException("FTP hostname is blank, check your settings?")
@@ -196,10 +195,16 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
     #TODO: if debug, temporarily redirect print() to stderr
 
     ftp = ftplib.FTP()
-    ftp.set_debuglevel(1 if options.get('debug', False) else 0)
-    ftp.connect(options['hostname'], options['port'])
+
+    if debug:
+        ftp.set_debuglevel(1 if debug else 0)
+        # Redirect print() to stderr so ftplib debugging does not mix with
+        # potentially print()-ed output
+        stdout = sys.stdout  # save current stdout
+        sys.stdout = sys.stderr
 
     try:
+        ftp.connect(options['hostname'], options['port'])
         ftp.login(options['username'], options['password'])
         ftp.cwd(options['savepath'])
 
@@ -215,7 +220,13 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
         # FTP always use Unix '/' as path separator, hence posixpath
 
     finally:
-        ftp.quit()
+        try:
+            ftp.quit()
+        except AttributeError:  # Exception before or at ftp.connect()
+            pass
+        finally:
+            if debug:
+                sys.stdout = stdout  # restore original stdout
 
 
 def _main(argv=None):  # @UnusedVariable
