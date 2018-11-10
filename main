@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+#
+# Foshelter - Tools for manipulating Fallout Shelter save data
+# <https://github.com/MestreLion/foshelter>
+#
+#    Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. See <http://www.gnu.org/licenses/gpl.html>
+
+"""
+    Demo script for Foshelter features
+"""
+
+import sys
+import os.path
+import logging
+import datetime
+import zipfile
+
+import foshelter as fs
+
+
+PROJNAME = 'foshelter'
+DATADIR = os.path.join(os.path.dirname(__file__), 'data')
+
+log = logging.getLogger(PROJNAME)
+
+
+def demo():
+    """Library features demo"""
+    #FIXME: Terribly outdated, most likely not working, update ASAP
+
+    options = fs.get_options()
+
+    platform = options['main']['platform']
+
+    if platform == 'android':
+        if options['android']['method'] == 'ftp':
+            data = fs.ftp_read(1, **options['ftp'])
+        else:
+            data = fs.adb_read(1)
+        game = fs.Game.from_data(fs.decrypt(data))
+
+    elif platform in ('windows', 'steam'):
+        path = os.path.expandvars(options[platform]['savepath'])
+        game = fs.Game.from_save(os.path.join(path, 'Vault1.sav'))
+
+    else:
+        game = fs.Game.from_save(os.path.join(DATADIR, 'Vault1.sav'))
+
+
+    for d in game.dwellers:
+        print(repr(d))
+
+
+def backup(slot: int, target=None, **options) -> str:
+    """Backup a game save file to target, behavior configurable by options."""
+    opts = fs.get_options()
+    opts.update(options.copy())
+
+    platform = opts['main'].get('platform', '').lower()
+
+    if platform == 'android':
+        return fs.android.backup(slot, target, **opts)
+
+    source = os.path.join(fs.settings.savepath(**opts), fs.util.savename(slot))
+    target = fs.util.localpath(slot, target)
+    return fs.util.copy_file(source, target)
+
+
+def backup_all(target: str = None, archive: bool = True, **options) -> str:
+    if target and not os.path.isdir(target):
+        raise fs.FSException("Target path is not a directory: %s", target)
+
+    files = []
+    for slot in (1, 2, 3):
+        files.append(backup(slot, target, **options))
+
+    if archive:
+        now = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        zippath = os.path.join(target or "", 'saves_{0}.zip'.format(now))
+        with zipfile.ZipFile(zippath, mode='x') as zfd:  # x = create only
+            for savefile in files:
+                zfd.write(savefile)
+        return zippath
+
+    return target or "."
+
+
+
+
+def _main(argv:None):  # @UnusedVariable
+    fs.util.setup_logging()
+    backup_all()
+
+
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(_main(sys.argv[1:]))
+    except fs.FSException as e:
+        log.error(e)
+    except (KeyboardInterrupt, BrokenPipeError):
+        pass
