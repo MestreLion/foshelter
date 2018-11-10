@@ -26,6 +26,6 @@ def setup_logging(level:int=logging.DEBUG):
     logging.basicConfig(level=level, format='%(levelname)s: %(message)s')
 
 
-def savename(vault: int) -> str:
+def savename(slot: int) -> str:
     """Return a save game file name"""
-    return 'Vault{0}.sav'.format(vault)
+    return 'Vault{0}.sav'.format(slot)
