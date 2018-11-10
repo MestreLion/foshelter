@@ -11,7 +11,6 @@ import os.path
 import json
 import logging
 import re
-import argparse
 
 from . import orm
 from . import util
@@ -281,31 +280,14 @@ class Dwellers(orm.EntityList):
 
 if __name__ == '__main__':
     DATADIR = os.path.join(os.path.dirname(__file__), '..', 'data')
-
-    parser = argparse.ArgumentParser(description=__doc__)
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-q', '--quiet',
-                       dest='loglevel',
-                       const=logging.WARNING,
-                       default=logging.INFO,
-                       action="store_const",
-                       help="Suppress informative messages.")
-    group.add_argument('-v', '--verbose',
-                       dest='loglevel',
-                       const=logging.DEBUG,
-                       action="store_const",
-                       help="Verbose mode, output extra info.")
-
+    parser = util.ArgumentParser(__doc__)
     parser.add_argument(nargs='?',
                         metavar='JSONFILE',
                         default=os.path.join(DATADIR, 'Vault1.json'),
                         dest='path',
                         help="Decrypted save game data in JSON format."
                             " [Default: %(default)s")
-
     args = parser.parse_args()
-    args.debug = args.loglevel == logging.DEBUG
-
     util.setup_logging(level=args.loglevel)
 
     try:

@@ -9,6 +9,13 @@ Assorted helper and wrapper functions
 import os.path
 import logging
 import shutil
+import argparse
+
+
+COPYRIGHT="""
+Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
+License: GPLv3 or later, at your choice. See <http://www.gnu.org/licenses/gpl>
+"""
 
 
 class FSException(Exception):
@@ -51,3 +58,31 @@ def copy_file(source: str, target: str) -> str:
     """Consistency wrapper for local file copy operations"""
     #TODO: preserve timestamp (mtime) ONLY, not permissions/owner/group
     return shutil.copy2(source, target)
+
+
+class ArgumentParser(argparse.ArgumentParser):
+    """Consistency wrapper for argparse initialization"""
+    def __init__(self, description: str, **kwargs):
+        super().__init__(
+            description=description,  # should be caller's module.__doc__
+            epilog=COPYRIGHT,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            **kwargs
+        )
+        group = self.add_mutually_exclusive_group()
+        group.add_argument('-q', '--quiet',
+                           dest='loglevel',
+                           const=logging.WARNING,
+                           default=logging.INFO,
+                           action="store_const",
+                           help="Suppress informative messages.")
+        group.add_argument('-v', '--verbose',
+                           dest='loglevel',
+                           const=logging.DEBUG,
+                           action="store_const",
+                           help="Verbose mode, output extra info.")
+
+    def parse_args(self, args=None, namespace=None):
+        args = super().parse_args(args, namespace)
+        args.debug = args.loglevel == logging.DEBUG
+        return args

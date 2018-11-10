@@ -98,11 +98,22 @@ def backup_all(target: str = None, archive: bool = True, **options) -> str:
     return target or "."
 
 
+def test(*args, **kwargs):
+    log.info("%r%r", args, kwargs)
 
 
-def _main(argv:None):  # @UnusedVariable
-    fs.util.setup_logging()
-    backup_all()
+
+
+def _main(argv:None):
+    parser = fs.util.ArgumentParser(__doc__)
+    parser.add_argument('-t', '--test', nargs='*',
+                       help="Run test()")
+    args = parser.parse_args(argv)
+    fs.util.setup_logging(args.loglevel)
+    log.debug(args)
+
+    if args.test is not None:
+        test(*args.test)
 
 
 

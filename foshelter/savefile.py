@@ -28,7 +28,6 @@ https://androidrepublic.org/threads/6181
 import sys
 import base64
 import json
-import argparse
 import collections
 
 import Crypto.Cipher.AES as AES  # PyPI: pip install pycryptodome
@@ -46,11 +45,6 @@ IV  = b'tu89geji340t89u2'
 KEY = b'A7CA9F3366D892C2F0BEF417341CA971B69AE9F7BACCCFFCF43C62D1D7D021F9'
 
 CIPHER = AES.new(base64.b16decode(KEY), AES.MODE_CBC, IV)
-
-COPYRIGHT="""
-Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
-License: GPLv3 or later, at your choice. See <http://www.gnu.org/licenses/gpl>
-"""
 
 
 class _FSJSONEnc(json.JSONEncoder):
@@ -114,11 +108,8 @@ def _loadjson(data: str) -> collections.OrderedDict:
 
 
 def _main(argv=None):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        epilog=COPYRIGHT,
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    from . import util
+    parser = util.ArgumentParser(__doc__)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-d", "--decrypt", action="store_true", default=True,
                        help="Decrypt save data to formatted JSON. [Default]")
