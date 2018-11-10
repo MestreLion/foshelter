@@ -49,6 +49,8 @@ log = logging.getLogger(__name__)
 
 
 def get_options() -> dict:
+    # TODO: idea: use a flat dict! options['%s.%s' % (section, key)] = value
+
     if OPTIONS:
         # Use the "cached" copy
         return OPTIONS.copy()
