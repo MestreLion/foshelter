@@ -30,6 +30,45 @@ log = logging.getLogger(__name__)
 
 
 
+def backup(slot: int, target=None, **options):
+    """Backup a save file from an Android device, configurable by options."""
+    opts = settings.get_options()
+    opts.update(options.copy())
+    method = opts['android'].get('method', '').lower()
+
+    if method == 'ftp':
+        try:
+            return ftp_get(slot, target, **opts['ftp'])
+        except OSError as e:
+            if e.errno not in (101,  # Network is unreachable
+                               111,  # No route to host
+                               113): # Connection Refused
+                raise
+            raise u.FSException(
+                "%s: is FTP enabled on Android device %s, port %d?", e,
+                opts['ftp'].get('hostname'),
+                opts['ftp'].get('port') or 21,
+                errno=e.errno
+            )
+
+    elif method == 'adb':
+        try:
+            return adb_pull(slot, target, **opts['ftp'])
+        #TODO: check for expected Exceptions and re-raise as FSException
+        except Exception:
+            raise
+
+    elif method == 'local':
+        opts.update({'main': {'platform': 'android'}})  # force platform
+        source = os.path.join(settings.savepath(**opts), u.savename(slot))
+        target = u.localpath(slot, target)
+        return u.copy_file(source, target)
+
+    raise u.FSException("Invalid or blank Android method: %r", method)
+
+
+
+
 def adb_pull(slot: int, target: str = None) -> str:
     target = u.localpath(slot, target)
     data = adb_read(slot)
