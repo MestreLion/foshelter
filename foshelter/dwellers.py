@@ -6,9 +6,6 @@
     Fallout Shelter Dwellers info
 """
 
-import sys
-import os.path
-import json
 import logging
 import re
 
@@ -274,52 +271,3 @@ class Dweller(orm.Entity):
 
 class Dwellers(orm.EntityList):
     EntityClass = Dweller
-
-
-
-
-if __name__ == '__main__':
-    DATADIR = os.path.join(os.path.dirname(__file__), '..', 'data')
-    parser = util.ArgumentParser(__doc__)
-    parser.add_argument(nargs='?',
-                        metavar='JSONFILE',
-                        default=os.path.join(DATADIR, 'Vault1.json'),
-                        dest='path',
-                        help="Decrypted save game data in JSON format."
-                            " [Default: %(default)s")
-    args = parser.parse_args()
-    util.setup_logging(level=args.loglevel)
-
-    try:
-        with open(args.path) as fp:
-            data = json.load(fp)
-    except json.decoder.JSONDecodeError as e:
-        log.error('Could not load Vault data. is it a decrypted JSON file? %s',
-                  args.path)
-        sys.exit(1)
-
-    dwellers = Dwellers.from_data(data['dwellers']['dwellers'])
-
-    print('\t'.join((
-        'BadInfo',
-        ' ID',
-        'Level',
-        'MaxHP',
-        'E17Real',
-        'E17Info',
-        'Job',
-        'New',
-        'Full Name',
-    )))
-    for d in dwellers:
-        print('\t'.join((
-            '{0.badinfo}',
-            '{0.ID:3d}',
-            '{0.level:2d}',
-            '{0.hp:.1f}',
-            '{0.erating:4.1f}',
-            '{0.e17info:4.1f}',
-            '{0.job}',
-            '{0.newcomer}',
-            '{0.name}',
-        )).format(d))

@@ -98,6 +98,32 @@ def backup_all(target: str = None, archive: bool = True, **options) -> str:
     return target or "."
 
 
+def e17info(path: str, decrypted: bool = False):
+    game = fs.Game.from_save(path, decrypted)
+    print('\t'.join((
+        'BadInfo',
+        ' ID',
+        'Level',
+        'MaxHP',
+        'E17Real',
+        'E17Info',
+        'Job',
+        'New',
+        'Full Name',
+    )))
+    for d in game.dwellers:
+        print('\t'.join((
+            '{0.badinfo}',
+            '{0.ID:3d}',
+            '{0.level:2d}',
+            '{0.hp:.1f}',
+            '{0.erating:4.1f}',
+            '{0.e17info:4.1f}',
+            '{0.job}',
+            '{0.newcomer}',
+            '{0.name}',
+        )).format(d))
+
 def test(*args, **kwargs):
     log.info("%r%r", args, kwargs)
 
