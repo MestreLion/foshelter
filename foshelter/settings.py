@@ -110,6 +110,17 @@ def get_options() -> dict:
     return options.copy()
 
 
+def savepath(**options) -> str:
+    for opt in (options, get_options(), FACTORY):
+        try:
+            path = opt[opt['main']['platform'].lower()]['savepath']
+            if path:
+                return os.path.expanduser(os.path.expandvars(path))
+        except Exception:
+            raise
+    raise util.FSException("Unable to determine savepath, check config")
+
+
 
 
 if __name__ == '__main__':
