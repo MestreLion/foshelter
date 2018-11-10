@@ -6,6 +6,8 @@
     Top level game classes
 """
 
+import json
+
 from . import orm
 from . import dwellers
 from . import savefile
@@ -14,9 +16,10 @@ class Game(orm.Entity):
     """Root class for a game save"""
 
     @classmethod
-    def from_save(cls, path):
-        with open(path) as fd:
-            return cls(savefile.decrypt(fd.read()))
+    def from_save(cls, path, decrypted=False):
+        with open(path, 'r') as fd:
+            data = json.load(fd) if decrypted else savefile.decrypt(fd.read())
+        return cls.from_data(data)
 
     def __init__(self, data: dict, **kw):
         super().__init__(data, **kw)
