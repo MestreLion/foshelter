@@ -10,19 +10,26 @@ import os.path
 import configparser
 import logging
 
+from . import util
 
+
+# See ../config.template.ini and android.read_ftp() for comprehensive info
 FACTORY = {
     'main': {
         'platform': 'android',
     },
     'android': {
         'method'  : 'ftp',  # options: 'local', 'ftp', 'adb'
+        'savepath': ''
     },
     'windows': {
-        'savepath': r'%UserProfile%\Documents\My Games\Fallout Shelter',
+        'savepath': r'%%UserProfile%%\Documents\My Games\Fallout Shelter',
     },
     'steam': {
-        'savepath': r'%LocalAppData%\FalloutShelter',
+        'savepath': r'%%LocalAppData%%\FalloutShelter',
+    },
+    'wine': {
+        'savepath': '~/.wine/drive_c/Users/${USER}/AppData/Local/FalloutShelter',
     },
     'ftp': {
         'hostname': '',
@@ -30,8 +37,10 @@ FACTORY = {
         'password': '',
         'savepath': '/Android/data/com.bethsoft.falloutshelter/files',
         'port'    : 0,   # 0 for default FTP port (21)
+        'debug'   : False,
     },
 }
+
 OPTIONS = {}
 
 log = logging.getLogger(__name__)
@@ -54,7 +63,9 @@ def get_options() -> dict:
         __package__
     )
 
-    paths = tuple(os.path.realpath(os.path.join(path, 'config.ini')) for path in
+    basename = 'config.ini'
+
+    paths = tuple(os.path.realpath(os.path.join(path, basename)) for path in
                   (os.path.join(os.path.dirname(__file__), '..'), configdir))
 
     cp = configparser.ConfigParser(inline_comment_prefixes='#')
@@ -62,7 +73,8 @@ def get_options() -> dict:
 
     if not config:
         log.warning("Use factory default settings, config not found in %s", paths)
-        return FACTORY
+        return options.copy()
+    config = config[-1]  # for logging purposes we consider only the last file
 
     def getlist(s, o):
         return [_.strip() for _ in cp.get(s, o).split(',')]
@@ -86,6 +98,12 @@ def get_options() -> dict:
             except configparser.NoOptionError as e:
                 log.warning("%s in %s", e, config)
 
+            except configparser.InterpolationSyntaxError as e:
+                raise util.FSException(
+                    "Syntax error on %s, remember to use %%%% for literals! %s",
+                    basename, str(e).split(':', 2)[-1].strip()
+                )
+
             except ValueError as e:
                 log.warning("%s in '%s' option of %s", e, opt, config)
 
@@ -95,6 +113,5 @@ def get_options() -> dict:
 
 
 if __name__ == '__main__':
-    from . import util
     util.setup_logging()
     print(get_options())
