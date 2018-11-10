@@ -28,6 +28,8 @@ import logging
 import datetime
 import zipfile
 
+import argh
+
 import foshelter as fs
 
 
@@ -131,6 +133,15 @@ def test(*args, **kwargs):
 
 
 def _main(argv:None):
+    #TODO: Great CLI parsers to try:
+    #    Docopt
+    #    Docopt-dispatch
+    #    Argh
+    #    Click
+    fs.util.setup_logging(logging.INFO)
+    argh.dispatch_commands([backup, backup_all, e17info, test])
+    return
+
     parser = fs.util.ArgumentParser(__doc__)
     parser.add_argument('-t', '--test', nargs='*',
                        help="Run test()")
