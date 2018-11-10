@@ -6,6 +6,7 @@
 Android-related functions
 """
 
+import sys
 import os.path
 import posixpath
 import logging
@@ -153,9 +154,8 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
         ftp.quit()
 
 
-
-
-if __name__ == '__main__':
+def _main(argv=None):  # @UnusedVariable
+    #FIXME: this _main() is terribly outdated, replace with something useful
     u.setup_logging()
 
     options = settings.get_options()
@@ -184,3 +184,14 @@ if __name__ == '__main__':
 
     else:
         log.error("Invalid or blank Android method: %s", method)
+
+
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(_main(sys.argv[1:]))
+    except u.FSException as e:
+        log.error(e)
+    except (KeyboardInterrupt, BrokenPipeError):
+        pass
