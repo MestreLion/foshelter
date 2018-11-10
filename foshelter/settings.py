@@ -92,13 +92,9 @@ def get_options() -> dict:
     return options
 
 
-def basic_logging():
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(levelname)s: %(message)s')
-
-
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+    from . import util
+    util.basic_logging()
     print(get_options())

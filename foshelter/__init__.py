@@ -5,6 +5,3 @@
 """
     Package setup
 """
-
-class FSException(Exception):
-    pass

@@ -13,7 +13,8 @@ import logging
 import re
 import argparse
 
-from . import orm, FSException
+from . import orm
+from . import util
 
 
 MAX_LEVEL = 50
@@ -119,7 +120,7 @@ def e17_equiv(l1, e1, l2=0, e2=0):
     try:
         assert epts == epts_test
     except AssertionError:
-        raise FSException(
+        raise util.FSException(
             "Assertion Failed!"
             " epts({l1}, {e1}, {l2}, {e2})=%s !="
             " epts(%s, BASEEND)=%s" %
@@ -248,8 +249,9 @@ class Dweller(orm.Entity):
             log.debug("xxyy")
             l1, l2 = int(einfo[:2]), int(einfo[2:])
             if l2 < l1:
-                raise FSException("%r: Invalid endurance format: %r (%d <= %d)" %
-                                  (self, einfo, l2, l1))
+                raise util.FSException(
+                    "%r: Invalid endurance format: %r (%d <= %d)"
+                    % (self, einfo, l2, l1))
             if False and l2 == l1:
                 log.warning("%r: Possibly erroneous endurance format: %r (%d == %d)",
                             self, einfo, l2, l1)
