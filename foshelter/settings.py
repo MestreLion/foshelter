@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 def get_options() -> dict:
     if OPTIONS:
         # Use the "cached" copy
-        return OPTIONS
+        return OPTIONS.copy()
 
     options = OPTIONS
     options.update(FACTORY)
@@ -89,7 +89,7 @@ def get_options() -> dict:
             except ValueError as e:
                 log.warning("%s in '%s' option of %s", e, opt, config)
 
-    return options
+    return options.copy()
 
 
 
