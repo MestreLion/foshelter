@@ -10,13 +10,22 @@ import logging
 
 
 class FSException(Exception):
-    pass
+    """
+    Exception with errno and %-formatting for args (like logging module).
+
+    All modules in this package should throw this for business-logic, expected
+    and handled custom exceptions
+    """
+    def __init__(self, msg:str="", *args, errno:int=0):
+        super().__init__(msg % args)
+        self.errno = errno
 
 
-def basic_logging():
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(levelname)s: %(message)s')
+def setup_logging(level:int=logging.DEBUG):
+    """Wrapper for uniformity when package modules are run as scripts"""
+    logging.basicConfig(level=level, format='%(levelname)s: %(message)s')
 
 
 def savename(vault: int) -> str:
+    """Return a save game file name"""
     return 'Vault{0}.sav'.format(vault)

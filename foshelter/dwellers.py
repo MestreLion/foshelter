@@ -123,8 +123,8 @@ def e17_equiv(l1, e1, l2=0, e2=0):
         raise util.FSException(
             "Assertion Failed!"
             " epts({l1}, {e1}, {l2}, {e2})=%s !="
-            " epts(%s, BASEEND)=%s" %
-            (l1, e1, l2, e2, epts, e17, endurance_points(e17, FULL_END))
+            " epts(%s, BASEEND)=%s",
+            l1, e1, l2, e2, epts, e17, endurance_points(e17, FULL_END)
         )
 
     return e17, hptot
@@ -250,8 +250,8 @@ class Dweller(orm.Entity):
             l1, l2 = int(einfo[:2]), int(einfo[2:])
             if l2 < l1:
                 raise util.FSException(
-                    "%r: Invalid endurance format: %r (%d <= %d)"
-                    % (self, einfo, l2, l1))
+                    "%r: Invalid endurance format: %r (%d <= %d)",
+                    self, einfo, l2, l1)
             if False and l2 == l1:
                 log.warning("%r: Possibly erroneous endurance format: %r (%d == %d)",
                             self, einfo, l2, l1)
@@ -306,7 +306,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.debug = args.loglevel == logging.DEBUG
 
-    logging.basicConfig(level=args.loglevel, format='%(levelname)s: %(message)s')
+    util.setup_logging(level=args.loglevel)
 
     try:
         with open(args.path) as fp:

@@ -89,7 +89,7 @@ def _ftp_readwrite(vault, read, data, **ftp_options):
 if __name__ == '__main__':
     from . import settings
 
-    u.basic_logging()
+    u.setup_logging()
 
     options = settings.get_options()
     method = options['android']['method']

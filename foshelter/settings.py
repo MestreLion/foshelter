@@ -96,5 +96,5 @@ def get_options() -> dict:
 
 if __name__ == '__main__':
     from . import util
-    util.basic_logging()
+    util.setup_logging()
     print(get_options())
