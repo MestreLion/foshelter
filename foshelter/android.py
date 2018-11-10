@@ -30,6 +30,21 @@ log = logging.getLogger(__name__)
 
 
 
+def adb_pull(slot: int, target: str = None) -> str:
+    target = u.localpath(slot, target)
+    data = adb_read(slot)
+    with open(target, 'wb') as fd:
+        fd.write(data)
+    return target
+
+
+def adb_push(slot: int, source: str = None) -> str:
+    source = u.localpath(slot, source)
+    with open(source, 'rb') as fd:
+        data = fd.read()
+    return adb_write(slot, data)
+
+
 def adb_read(slot: int) -> bytes:
     # https://github.com/google/python-adb
     if not adb:
@@ -46,8 +61,10 @@ def adb_read(slot: int) -> bytes:
     return device.Pull(os.path.join('/mnt/sdcard', GAMEDIR, u.savename(slot)))
 
 
-def adb_write(slot: int, data: bytes) -> None:
-    pass
+def adb_write(slot: int, data: bytes) -> str:  # @UnusedVariable
+    # because raise NotImplementedError is too blunt...
+    log.warning("adb_write() is currently a stub dummy!")
+    return ""
 
 
 
