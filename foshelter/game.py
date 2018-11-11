@@ -40,7 +40,7 @@ class Game(orm.RootEntity):
     """Root class for a game save"""
 
     @classmethod
-    def from_save(cls, path, decrypted=False):
+    def from_save(cls, path: str, decrypted: bool = False):
         with open(path, 'r') as fd:
             data = fd.read()
 

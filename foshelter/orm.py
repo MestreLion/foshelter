@@ -18,6 +18,7 @@ class Base:
         self._data = data
         self._root = root
         assert not kw
+        assert not root or isinstance(root, RootEntity)
 
     def to_data(self):
         return self._data
@@ -42,6 +43,12 @@ class EntityList(Base, collections.abc.MutableSequence):
     def __init__(self, data: list, **kw):
         super().__init__(data, **kw)
         self._list = [self.EntityClass(d) for d in self._data]
+
+    def __str__(self):
+        return str(self._list)
+
+    def __repr__(self):
+        return repr(self._list)
 
     # MutableSequence boilerplate
 

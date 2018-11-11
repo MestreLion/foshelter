@@ -126,8 +126,21 @@ def e17info(path: str, decrypted: bool = False):
             '{0.name}',
         )).format(d))
 
-def test(*args, **kwargs):
-    log.info("%r%r", args, kwargs)
+
+
+def test(path: str, decrypted: bool = False):
+    game = fs.Game.from_save(path, decrypted)
+
+    print(game.dwellers)
+
+    for item in game.lunchboxes:
+        print(item, repr(item))
+
+    if game.lunchboxes:
+        print(game.lunchboxes)
+        a = game.lunchboxes[0]
+        game.lunchboxes.append(a)
+        del game.lunchboxes[-1]
 
 
 
@@ -139,6 +152,8 @@ def _main(argv:None):
     #    Argh
     #    Click
     #    arghandler
+    #    DocPie
+    # https://realpython.com/comparing-python-command-line-parsing-libraries-argparse-docopt-click/
     fs.util.setup_logging(logging.INFO)
     argh.dispatch_commands([backup, backup_all, e17info, test])
     return
