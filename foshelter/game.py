@@ -46,7 +46,7 @@ class Game(orm.RootEntity):
 
         if decrypted:
             try:
-                return cls.from_data(json.loads(data))
+                return cls.from_data(savefile.decode(data))
             except json.decoder.JSONDecodeError as e:
                 raise util.FSException('Could not load Vault data,'
                    ' is it a decrypted JSON file? %s: %s', path, e)
@@ -63,6 +63,18 @@ class Game(orm.RootEntity):
 
         self.dwellers = dwellers.Dwellers.from_data(data['dwellers']['dwellers'], self)
         self.lunchboxes = LunchBoxes.from_data(data["vault"]["LunchBoxesByType"], self)
+
+
+    def to_save(self, path:str, decrypted=False, pretty=False, sort=False):
+        if decrypted:
+            data = savefile.encode(self.to_data(), pretty, sort)
+            with open(path, 'w') as fd:
+                fd.write(data)
+                return
+
+        data = savefile.encrypt(self.to_data())
+        with open(path, 'wb') as fd:
+            fd.write(data)
 
 
     def update_lunchboxes(self):
