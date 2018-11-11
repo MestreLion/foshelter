@@ -10,12 +10,21 @@ import os.path
 import logging
 import shutil
 import argparse
+import enum
+import re
+
+from . import orm
 
 
 COPYRIGHT="""
 Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
 License: GPLv3 or later, at your choice. See <http://www.gnu.org/licenses/gpl>
 """
+
+# https://stackoverflow.com/a/9283563/624066
+_sepcamel = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
+
+
 
 
 class FSException(Exception):
@@ -28,6 +37,23 @@ class FSException(Exception):
     def __init__(self, msg:str="", *args, errno:int=0):
         super().__init__(msg % args)
         self.errno = errno
+
+
+class FSEnum(orm.Entity, enum.Enum):
+    """Enum with custom str(): MyNEWClass.FOO_BAR -> 'My NEW Class: Foo Bar'"""
+    def __str__(self):
+        if not getattr(self, '_strname', None):
+            self._strname = ": ".join(
+                (re.sub(_sepcamel, r' \1', self.__class__.__name__),
+                 self._name_.replace('_', ' ').title())
+             )
+        return self._strname
+
+    def __repr__(self):
+        return "<%s.%s>" % (
+            self.__class__.__name__, self._name_)
+
+
 
 
 def setup_logging(level:int=logging.DEBUG):
