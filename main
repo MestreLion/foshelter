@@ -39,35 +39,48 @@ DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 log = logging.getLogger(PROJNAME)
 
 
-def demo():
-    """Library features demo"""
-    #FIXME: Terribly outdated, most likely not working, update ASAP
+def decrypt(src: str, dst: str, pretty_print=False, sort_keys=False):
+    """Decrypt `src` SAV file to `dst` JSON"""
 
-    options = fs.get_options()
+    with open(src, 'rb') as fd:
+        data = fd.read()
 
-    platform = options['main']['platform']
+    try:
+        data = fs.encode(fs.decrypt(data), pretty_print, sort_keys)
+    except ValueError as e:
+        raise fs.FSException(
+            'Could not decrypt data, is it an encrypted SAV file? %s: %s',
+            src, e
+        )
 
-    if platform == 'android':
-        if options['android']['method'] == 'ftp':
-            data = fs.ftp_read(1, **options['ftp'])
-        else:
-            data = fs.adb_read(1)
-        game = fs.Game.from_data(fs.decrypt(data))
-
-    elif platform in ('windows', 'steam'):
-        path = os.path.expandvars(options[platform]['savepath'])
-        game = fs.Game.from_save(os.path.join(path, 'Vault1.sav'))
-
-    else:
-        game = fs.Game.from_save(os.path.join(DATADIR, 'Vault1.sav'))
+    with open(dst, 'w') as fd:
+        fd.write(data)
 
 
-    for d in game.dwellers:
-        print(repr(d))
+def encrypt(src: str, dst: str):
+    """Encrypt `src` JSON file to `dst` save game file"""
+    with open(src, 'r') as fd:
+        data = fd.read()
+
+    try:
+        data = fs.encrypt(fs.decode(data))
+    except ValueError as e:
+        raise fs.FSException(
+            'Could not encrypt data, is it a decrypted JSON file? %s: %s',
+            src, e
+        )
+
+    with open(dst, 'wb') as fd:
+        fd.write(data)
 
 
 def backup(slot: int, target=None, **options) -> str:
-    """Backup a game save file to target, behavior configurable by options."""
+    """
+    Backup a game slot file to target, using `options` from config file.
+    `target` path can be a directory, file, or blank. Current directory
+    and save file basename, such as 'Vault1.sav', will be used if needed
+    Return saved local file path
+    """
     opts = fs.get_options()
     opts.update(options.copy())
 
@@ -82,6 +95,7 @@ def backup(slot: int, target=None, **options) -> str:
 
 
 def backup_all(target: str = None, archive: bool = True, **options) -> str:
+    """Backup all game slots to `target` path directory"""
     if target and not os.path.isdir(target):
         raise fs.FSException("Target path is not a directory: %s", target)
 
@@ -101,6 +115,7 @@ def backup_all(target: str = None, archive: bool = True, **options) -> str:
 
 
 def e17info(path: str, decrypted: bool = False):
+    """Dweller statistics based on my personal dweller naming convention"""
     game = fs.Game.from_save(path, decrypted)
     print('\t'.join((
         'BadInfo',
@@ -127,46 +142,57 @@ def e17info(path: str, decrypted: bool = False):
         )).format(d))
 
 
+def demo(source: str, destination: str = None, decrypted: bool = False):
+    """Library features demo"""
 
-def test(path: str, decrypted: bool = False):
-    game = fs.Game.from_save(path, decrypted)
+    # Load from encrypted SAV or decrypted JSON files
+    game = fs.Game.from_save(source, decrypted)
 
-    print(game.dwellers)
+    # Dwellers is a special container with full list capabilities
+    # Each Dweller in the list is also a fully featured instance of a class
+    for dweller in game.dwellers[2:5]:
+        print(repr(dweller), dweller)
+
+    # Give yourself a little gift... LunchBox is an Enum in a container
+    game.lunchboxes.extend((fs.LunchBox.STARTER_PACK,) * 3)
+
+    # You only believe in what you see?
+    for box in game.lunchboxes:
+        print(box)
+
+    if destination:
+        # Either Encrypted SAV or Decrypted JSON with PrettyPrint and SortKeys
+        opts = (decrypted,) * 3
+        game.to_save(destination, *opts)
+
+
+
+def test(source: str, dest: str, target: str, decrypted: bool = False):
+    """Run whatever I'm currently testing on development"""
+    game = fs.Game.from_save(source, decrypted)
+
+    opts = (decrypted,) * 3
 
     for item in game.lunchboxes:
         print(item, repr(item))
 
-    if game.lunchboxes:
-        print(game.lunchboxes)
-        a = game.lunchboxes[0]
-        game.lunchboxes.append(a)
-        del game.lunchboxes[-1]
+    for box in fs.game.LunchBox:
+        game.lunchboxes.append(box)
+
+    game.to_save(dest, *opts)
+
+    game.lunchboxes.pop()
+    del game.lunchboxes[-2]
+
+    game.to_save(target, *opts)
 
 
 
 
-def _main(argv:None):
-    #TODO: Great CLI parsers to try:
-    #    Docopt
-    #    Docopt-dispatch
-    #    Argh
-    #    Click
-    #    arghandler
-    #    DocPie
-    # https://realpython.com/comparing-python-command-line-parsing-libraries-argparse-docopt-click/
+def _main(argv=None):  # @UnusedVariable
     fs.util.setup_logging(logging.INFO)
-    argh.dispatch_commands([backup, backup_all, e17info, test])
-    return
-
-    parser = fs.util.ArgumentParser(__doc__)
-    parser.add_argument('-t', '--test', nargs='*',
-                       help="Run test()")
-    args = parser.parse_args(argv)
-    fs.util.setup_logging(args.loglevel)
-    log.debug(args)
-
-    if args.test is not None:
-        test(*args.test)
+    argh.dispatch_commands([backup, backup_all, e17info,
+                            test, encrypt, decrypt, demo])
 
 
 
