@@ -8,6 +8,6 @@
 from .util     import FSException
 from .settings import get_options
 from .savefile import decrypt, encrypt, decode, encode
-from .android  import ftp_read, ftp_write, adb_read, adb_write
+from .android  import ftp_get, ftp_put, adb_pull, adb_push
 from .dwellers import Dweller, Dwellers
 from .game     import Game, LunchBox, LunchBoxes
