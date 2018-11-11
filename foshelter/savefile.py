@@ -73,14 +73,14 @@ def decrypt(savedata: bytes) -> collections.OrderedDict:
         data = data.rstrip(data[-1:])
 
     # Deserialize JSON string to Python dict object
-    return _loadjson(data.decode('ascii'))
+    return decode(data.decode('ascii'))
 
 
 def encrypt(obj: dict) -> bytes:
-    """Encrypt a Dictionary to a Fallout Shelter save game data."""
+    """Encrypt a Dictionary to Fallout Shelter save game data."""
 
     # Serialize to a one-line JSON byte string
-    data = _dumpjson(obj).encode('ascii')
+    data = encode(obj).encode('ascii')
 
     # Add PKCS#7 padding
     pad = 16 - len(data) % 16
@@ -90,8 +90,12 @@ def encrypt(obj: dict) -> bytes:
     return base64.b64encode(CIPHER.encrypt(data))
 
 
-def _dumpjson(obj: dict, pretty: bool = False, sort: bool = False) -> str:
-    """Wrap json.dumps() using custom float encoder and pretty-print preset"""
+def encode(obj: dict, pretty: bool = False, sort: bool = False) -> str:
+    """
+    Encode (dump) game dictionary to serialized JSON with game formatting.
+    By default use custom float encoder and adjusted separators to allow bitwise
+    identical save game reconstruction after encryption
+    """
     if pretty:
         kwargs= dict(sort_keys=sort, indent=4)
         newline = '\n'
@@ -102,9 +106,12 @@ def _dumpjson(obj: dict, pretty: bool = False, sort: bool = False) -> str:
     return json.dumps(obj, cls=_FSJSONEnc, **kwargs) + newline
 
 
-def _loadjson(data: str) -> collections.OrderedDict:
-    """Wrap json.loads() preserving key order"""
-    return json.loads(data, object_pairs_hook=collections.OrderedDict)
+def decode(data: str) -> collections.OrderedDict:
+    """
+    Decode (load) decrypted JSON Fallout Shelter save game data to dictionary.
+    Preserve key order to allow bitwise identical save reconstruction.
+    """
+    return  json.loads(data, object_pairs_hook=collections.OrderedDict)
 
 
 def _main(argv=None):
@@ -121,9 +128,9 @@ def _main(argv=None):
 
     data = sys.stdin.read()
     if args.decrypt:
-        out = _dumpjson(decrypt(data), pretty=True, sort=args.sort)
+        out = encode(decrypt(data), pretty=True, sort=args.sort)
     else:
-        out = encrypt(_loadjson(data)).decode('ascii')
+        out = encrypt(decode(data)).decode('ascii')
 
     sys.stdout.write(out)
 
