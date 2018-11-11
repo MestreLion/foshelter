@@ -14,6 +14,28 @@ from . import savefile
 from . import util
 
 
+
+
+class LunchBox(util.FSEnum):
+    REGULAR           = 0
+    MR_HANDY          = 1
+    PET_CARRIER       = 2
+    STARTER_PACK      = 3
+    NUKA_COLA_QUANTUM = 4
+
+
+class LunchBoxes(orm.EntityList):
+    EntityClass = LunchBox
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._root.update_lunchboxes()
+
+    def insert(self, idx, obj: LunchBox):
+        super().insert(idx, obj)
+        self._root.update_lunchboxes()
+
+
 class Game(orm.RootEntity):
     """Root class for a game save"""
 
@@ -40,3 +62,9 @@ class Game(orm.RootEntity):
         super().__init__(data, **kw)
 
         self.dwellers = dwellers.Dwellers.from_data(data['dwellers']['dwellers'], self)
+        self.lunchboxes = LunchBoxes.from_data(data["vault"]["LunchBoxesByType"], self)
+
+
+    def update_lunchboxes(self):
+        count = len(self.lunchboxes)
+        self._data["vault"]["LunchBoxesCount"] = count
