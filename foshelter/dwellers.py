@@ -128,6 +128,11 @@ def e17_equiv(l1, e1, l2=0, e2=0):
 
 
 
+class Gender(util.FSEnum):
+    FEMALE = 1
+    MALE   = 2
+
+
 class Dweller(orm.Entity):
 
     re_einfo = re.compile(
@@ -160,6 +165,13 @@ class Dweller(orm.Entity):
         if not v: return  # silently ignore, by design
         self._data['name'], _, self._data['lastName'] = v.strip().partition(' ')
 
+
+    @property
+    def gender(self):
+        return Gender(self._data['gender'])
+
+
+    # My own custom properties
 
     @property
     def job(self):
