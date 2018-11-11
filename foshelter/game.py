@@ -14,7 +14,7 @@ from . import savefile
 from . import util
 
 
-class Game(orm.Entity):
+class Game(orm.RootEntity):
     """Root class for a game save"""
 
     @classmethod
@@ -39,4 +39,4 @@ class Game(orm.Entity):
     def __init__(self, data: dict, **kw):
         super().__init__(data, **kw)
 
-        self.dwellers = dwellers.Dwellers.from_data(data['dwellers']['dwellers'])
+        self.dwellers = dwellers.Dwellers.from_data(data['dwellers']['dwellers'], self)

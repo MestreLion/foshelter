@@ -11,11 +11,12 @@ import collections.abc
 
 class Base:
     @classmethod
-    def from_data(cls, data):
-        return cls(data=data)
+    def from_data(cls, data, root):
+        return cls(data=data, root=root)
 
-    def __init__(self, data=None, **kw):
+    def __init__(self, data=None, root=None, **kw):
         self._data = data
+        self._root = root
         assert not kw
 
     def to_data(self):
@@ -23,7 +24,15 @@ class Base:
 
 
 class Entity(Base):
-    pass
+    def __str__(self):
+        return '\n'.join('{0}: {1}'.format(k.capitalize(), v)
+                         for k, v in vars(self).items())
+
+
+class RootEntity(Entity):
+    @classmethod
+    def from_data(cls, data):
+        return cls(data=data)
 
 
 class EntityList(Base, collections.abc.MutableSequence):
@@ -33,9 +42,6 @@ class EntityList(Base, collections.abc.MutableSequence):
     def __init__(self, data: list, **kw):
         super().__init__(data, **kw)
         self._list = [self.EntityClass(d) for d in self._data]
-
-    def to_data(self):
-        return [e.to_data() for e in self._list]
 
     # MutableSequence boilerplate
 
