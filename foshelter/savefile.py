@@ -44,7 +44,7 @@ IV  = b'tu89geji340t89u2'
 # See previous commits on how to manually generate it
 KEY = b'A7CA9F3366D892C2F0BEF417341CA971B69AE9F7BACCCFFCF43C62D1D7D021F9'
 
-CIPHER = AES.new(base64.b16decode(KEY), AES.MODE_CBC, IV)
+CIPHER = (base64.b16decode(KEY), AES.MODE_CBC, IV)
 
 
 class _FSJSONEnc(json.JSONEncoder):
@@ -65,7 +65,7 @@ def decrypt(savedata: bytes) -> collections.OrderedDict:
     """Decrypt a Fallout Shelter save game data to a Dictionary."""
 
     # Decode and decrypt the save data
-    data = CIPHER.decrypt(base64.b64decode(savedata))  # also accepts ASCII str
+    data = AES.new(*CIPHER).decrypt(base64.b64decode(savedata))  # also accepts ASCII str
 
     # Remove tailing padding, if any
     # PKCS#7 padding is N bytes of value N, unpadded data is data[:-data[-1]]
@@ -87,7 +87,7 @@ def encrypt(obj: dict) -> bytes:
     data += pad * bytes((pad,))
 
     # Encrypt and encode
-    return base64.b64encode(CIPHER.encrypt(data))
+    return base64.b64encode(AES.new(*CIPHER).encrypt(data))
 
 
 def encode(obj: dict, pretty: bool = False, sort: bool = False) -> str:
