@@ -44,6 +44,12 @@ class EntityList(Base, collections.abc.MutableSequence):
         super().__init__(data, **kw)
         self._list = [self.EntityClass(d) for d in self._data]
 
+    def get(self, ID: int, default):
+        for e in self._list:
+            if getattr(e, 'ID', None) == ID:
+                return e
+        return default
+
     def __str__(self):
         return str(self._list)
 
