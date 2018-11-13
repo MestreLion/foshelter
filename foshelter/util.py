@@ -13,8 +13,6 @@ import argparse
 import enum
 import re
 
-from . import orm
-
 
 COPYRIGHT="""
 Copyright (C) 2018 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
@@ -39,7 +37,7 @@ class FSException(Exception):
         self.errno = errno
 
 
-class FSEnum(orm.Entity, enum.Enum):
+class FSEnum(enum.Enum):
     """Enum with custom str(): MyNEWClass.FOO_BAR -> 'My NEW Class: Foo Bar'"""
     def __str__(self):
         if not getattr(self, '_strname', None):

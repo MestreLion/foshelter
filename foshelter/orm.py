@@ -11,13 +11,12 @@ import collections.abc
 
 class Base:
     @classmethod
-    def from_data(cls, data, root):
-        return cls(data=data, root=root)
+    def from_data(cls, data, root=None):
+        return cls(data, root)
 
-    def __init__(self, data=None, root=None, **kw):
+    def __init__(self, data, root=None):
         self._data = data
         self._root = root
-        assert not kw
         assert not root or isinstance(root, RootEntity)
 
     def to_data(self):
@@ -33,16 +32,23 @@ class Entity(Base):
 class RootEntity(Entity):
     @classmethod
     def from_data(cls, data):
-        return cls(data=data)
+        return cls(data)
 
 
 class EntityList(Base, collections.abc.MutableSequence):
     """Base class for containers. Subclasses SHOULD override EntityClass"""
     EntityClass = Entity
 
-    def __init__(self, data: list, **kw):
-        super().__init__(data, **kw)
-        self._list = [self.EntityClass(d) for d in self._data]
+    @classmethod
+    def _item_data(cls, item):
+        return item.to_data() if issubclass(cls.EntityClass, Base) else item
+
+    def __init__(self, data: list, root=None):
+        super().__init__(data, root)
+        self._list = [self.EntityClass(d, root)
+                      if issubclass(self.EntityClass, Base)
+                      else self.EntityClass(d)
+                      for d in self._data]
 
     def get(self, ID: int, default):
         for e in self._list:
@@ -62,8 +68,8 @@ class EntityList(Base, collections.abc.MutableSequence):
         if isinstance(idx, int):
             return self._list[idx]
         elif isinstance(idx, slice):
-            return  self.__class__.from_data((_ for _ in self._data[idx]), root=self._root)
-            #return self.__class__.from_data((_.to_data() for _ in self._list[idx]), root=self._root)
+            return  self.__class__((_ for _ in self._data[idx]), self._root)
+            #return self.__class__((_.to_data() for _ in self._list[idx]), root=self._root)
         raise TypeError("%s indices must be integers or slices, not %s".
                         format(self.__class__.__name__, type(idx)))
 
@@ -73,7 +79,7 @@ class EntityList(Base, collections.abc.MutableSequence):
                             format(self.__class__.__name__, type(idx)))
         assert isinstance(obj, (self.EntityClass, self.__class__))
         self._list[idx] = obj
-        self._data[idx] = obj.to_data()
+        self._data[idx] = self._item_data(obj)
 
     def __delitem__(self, idx: int or slice):
         if not isinstance(idx, (int, slice)):
@@ -89,4 +95,4 @@ class EntityList(Base, collections.abc.MutableSequence):
     def insert(self, idx: int, obj: Entity):
         assert isinstance(obj, self.EntityClass)
         self._list.insert(idx, obj)
-        self._data.insert(idx, obj.to_data())
+        self._data.insert(idx, self._item_data(obj))

@@ -145,8 +145,8 @@ class Dweller(orm.Entity):
     re_job = re.compile(r'^([A-Z]([0-9]{2}|[A-Z]{2}|\?\?)) +')
 
 
-    def __init__(self, data: dict, **kw):
-        super().__init__(data, **kw)
+    def __init__(self, data: dict, root=None):
+        super().__init__(data, root)
 
         self.ID    = data['serializeId']
         self.level = data['experience']['currentLevel']

@@ -58,11 +58,11 @@ class Game(orm.RootEntity):
                ' is it an encrypted SAV file? %s: %s', path, e)
 
 
-    def __init__(self, data: dict, **kw):
-        super().__init__(data, **kw)
+    def __init__(self, data: dict):
+        super().__init__(data)
 
-        self.dwellers = dwellers.Dwellers.from_data(data['dwellers']['dwellers'], self)
-        self.lunchboxes = LunchBoxes.from_data(data["vault"]["LunchBoxesByType"], self)
+        self.dwellers = dwellers.Dwellers(data['dwellers']['dwellers'], self)
+        self.lunchboxes = LunchBoxes(data["vault"]["LunchBoxesByType"], self)
 
 
     def to_save(self, path:str, decrypted=False, pretty=False, sort=False):
