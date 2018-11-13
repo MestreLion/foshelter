@@ -31,7 +31,7 @@ class LunchBoxes(orm.EntityList):
         super().__delitem__(key)
         self._root.update_lunchboxes()
 
-    def insert(self, idx, obj: LunchBox):
+    def insert(self, idx: int, obj: LunchBox):
         super().insert(idx, obj)
         self._root.update_lunchboxes()
 

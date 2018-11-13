@@ -58,22 +58,35 @@ class EntityList(Base, collections.abc.MutableSequence):
 
     # MutableSequence boilerplate
 
-    def __getitem__(self, key):
-        return self._list[key]
+    def __getitem__(self, idx: int or slice):
+        if isinstance(idx, int):
+            return self._list[idx]
+        elif isinstance(idx, slice):
+            return  self.__class__.from_data((_ for _ in self._data[idx]), root=self._root)
+            #return self.__class__.from_data((_.to_data() for _ in self._list[idx]), root=self._root)
+        raise TypeError("%s indices must be integers or slices, not %s".
+                        format(self.__class__.__name__, type(idx)))
 
-    def __setitem__(self, key, value: Entity):
-        assert isinstance(value, self.EntityClass)
-        self._list[key] = value
-        self._data[key] = value.to_data()
+    def __setitem__(self, idx: int or slice, obj: Entity or EntityList):
+        if not isinstance(idx, (int, slice)):
+            raise TypeError("%s indices must be integers or slices, not %s".
+                            format(self.__class__.__name__, type(idx)))
+        assert isinstance(obj, (self.EntityClass, self.__class__))
+        self._list[idx] = obj
+        self._data[idx] = obj.to_data()
 
-    def __delitem__(self, key):
-        del self._list[key]
-        del self._data[key]
+    def __delitem__(self, idx: int or slice):
+        if not isinstance(idx, (int, slice)):
+            raise TypeError("%s indices must be integers or slices, not %s".
+                            format(self.__class__.__name__, type(idx)))
+        del self._list[idx]
+        del self._data[idx]
 
     def __len__(self):
+        assert len(self._list) == len(self._data)
         return len(self._list)
 
-    def insert(self, idx, obj: Entity):
+    def insert(self, idx: int, obj: Entity):
         assert isinstance(obj, self.EntityClass)
         self._list.insert(idx, obj)
         self._data.insert(idx, obj.to_data())
