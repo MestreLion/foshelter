@@ -129,8 +129,8 @@ def e17_equiv(l1, e1, l2=0, e2=0):
 
 
 class Gender(util.FSEnum):
-    FEMALE = 1
-    MALE   = 2
+    F = 1
+    M = 2
 
 
 class Dweller(orm.Entity):
@@ -156,7 +156,7 @@ class Dweller(orm.Entity):
 
 
     @property
-    def name(self):
+    def name(self) -> str:
         return '{name} {lastName}'.format(**self._data)
 
     @name.setter
@@ -167,8 +167,13 @@ class Dweller(orm.Entity):
 
 
     @property
-    def gender(self):
+    def gender(self) -> Gender:
         return Gender(self._data['gender'])
+    @gender.setter
+    def gender(self, v: Gender):
+        # Must solve implications, such as gender-specific outfit, hair, etc
+        assert isinstance(v, Gender)
+        raise NotImplementedError
 
 
     # My own custom properties
@@ -272,7 +277,8 @@ class Dweller(orm.Entity):
 
 
     def __repr__(self):
-        return '<Dweller({ID:3d}, {level:2d}, {hp}, {0.name})>'.format(self, **vars(self))
+        return ('<Dweller({ID:3d}, {level:2d}, {hp}, {0.gender.name}, {0.name})>'.
+                format(self, **vars(self)))
 
 
     def __str__(self):
