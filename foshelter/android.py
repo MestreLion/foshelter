@@ -120,6 +120,7 @@ def ftp_get(slot: int, target: str = None, **ftp_options) -> str:
     Return the saved local file full path, as a convenience.
     """
     target = u.localpath(slot, target)
+    log.info("Saving game slot %s from Android FTP to %s", slot, target)
     data = ftp_read(slot, **ftp_options)
     with open(target, 'wb') as fd:
         fd.write(data)
@@ -192,8 +193,6 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
 
     savename = u.savename(slot)
 
-    #TODO: if debug, temporarily redirect print() to stderr
-
     ftp = ftplib.FTP()
 
     if debug:
@@ -204,6 +203,7 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
         sys.stdout = sys.stderr
 
     try:
+        log.info("Connecting to %s:%s", options['hostname'], options['port'] or 21)
         ftp.connect(options['hostname'], options['port'])
         ftp.login(options['username'], options['password'])
         ftp.cwd(options['savepath'])
@@ -215,6 +215,7 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
             return bytes(data)
 
         # write
+        log.debug("%s: %s", savename, info)
         ftp.storbinary('STOR {0}'.format(savename), io.BytesIO(data))
         return posixpath.join(options['savepath'], savename)
         # FTP always use Unix '/' as path separator, hence posixpath

@@ -190,7 +190,7 @@ def test(source: str, dest: str, target: str, decrypted: bool = False):
 
 
 def _main(argv=None):  # @UnusedVariable
-    fs.util.setup_logging(logging.INFO)
+    fs.util.setup_logging(logging.DEBUG)
     argh.dispatch_commands([backup, backup_all, e17info,
                             test, encrypt, decrypt, demo,
                             fs.ftp_get, fs.ftp_put])
