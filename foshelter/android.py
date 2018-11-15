@@ -13,8 +13,9 @@ import logging
 import ftplib
 import io
 
+import progressbar  # PyPI: pip install progressbar
 try:
-    # PyPI: pip install adb  # Require libusb1>=1.0.16 (Ubuntu 16.06+_
+    # PyPI: pip install adb  # Require libusb1>=1.0.16 (Ubuntu 16.06+)
     import adb.adb_commands, adb.sign_pycryptodome  # @UnresolvedImport
 except ImportError:
     adb = None
@@ -24,6 +25,10 @@ from . import settings
 
 
 GAMEDIR = '/Android/data/com.bethsoft.falloutshelter/files'
+
+# https://tools.ietf.org/html/rfc3659.html#section-7.5
+FTP_MLSD_FACTS = ('size', 'modify', 'create', 'type', 'unique', 'perm', 'lang',
+                  'media-type', 'charset')
 
 log = logging.getLogger(__name__)
 
@@ -175,7 +180,8 @@ def ftp_write(slot: int, data: bytes, **ftp_options) -> str:
     return _ftp_readwrite(slot, False, data, **ftp_options)
 
 
-def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
+def _ftp_readwrite(slot:int, read:bool, data:bytes, info=None, progress=True,
+                   **ftp_options):
     """
     Read or write save game data to an Android device FTP server.
 
@@ -210,8 +216,49 @@ def _ftp_readwrite(slot: int, read: bool, data: bytes, **ftp_options):
 
         # read
         if read:
+            def update_data(databytes):
+                if progress and not pbar.start_time:
+                    pbar.start()
+                data.extend(databytes)
+                totalbytes = len(data)
+                if progress:
+                    pbar.update(totalbytes)
+                    return
+                if totalbytes % 128*2*10 == 0:  # every 128KiB
+                    log.info("%s/%s bytes transfered", totalbytes, filesize)
+
+            filesize = 2**21  # 2MiB, an upper bound for save file
+            try:
+                for filename, facts in ftp.mlsd(facts=FTP_MLSD_FACTS):
+                    if filename == savename:
+                        filesize = facts['size']
+                        log.debug("%s: %s", savename, facts)
+                        break
+            except ftplib.error_perm as e:
+                if not str(e).startswith('502'):
+                    raise
+                # MLSD not supported, try SIZE
+                filesize = ftp.size(savename)
+
+
+
+            log.debug("%s: %s bytes", savename, filesize)
+
+            pbar = progressbar.ProgressBar(widgets=[
+                savename, ':',
+                ' ', progressbar.Percentage(),
+                ' ', progressbar.SimpleProgress(), ' bytes',
+                ' ', progressbar.Bar('.'),
+                ' ', progressbar.FileTransferSpeed(),
+                ' ', progressbar.ETA(),
+                ' '], maxval=filesize)
+
             data = bytearray()
-            ftp.retrbinary('RETR {0}'.format(savename), data.extend)
+            ftp.retrbinary('RETR {0}'.format(savename), update_data)
+
+            if progress:
+                pbar.finish()
+
             return bytes(data)
 
         # write
