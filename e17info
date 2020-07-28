@@ -263,7 +263,7 @@ def parse_end(endstr):
     # Try 'xx,y'
     if ',' in endstr:
         log.debug("xx,y")
-        lvl, end = (int(_) for _ in endstr.split(',', 1))
+        lvl, end = map(int, endstr.split(',', 1))
 
         if False and end > 10:
             log.warning("%r? Are you sure a dweller arrived with E%s?",

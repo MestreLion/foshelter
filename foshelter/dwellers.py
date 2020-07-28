@@ -163,7 +163,7 @@ class Dweller(orm.Entity):
     def name(self, v: str):
         assert isinstance(v, str)
         if not v: return  # silently ignore, by design
-        self._data['name'], _, self._data['lastName'] = v.strip().partition(' ')
+        self._data['name'], __, self._data['lastName'] = v.strip().partition(' ')
 
 
     @property
@@ -254,7 +254,7 @@ class Dweller(orm.Entity):
         # Try 'xx,y'
         if ',' in einfo:
             log.debug("xx,y")
-            lvl, end = (int(_) for _ in einfo.split(',', 1))
+            lvl, end = map(int, einfo.split(',', 1))
             return e17_equiv(lvl, end)[0]
 
         # Try 'xxyy'

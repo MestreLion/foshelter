@@ -79,7 +79,7 @@ def get_options() -> dict:
     config = config[-1]  # for logging purposes we consider only the last file
 
     def getlist(s, o):
-        return [_.strip() for _ in cp.get(s, o).split(',')]
+        return map(str.strip, cp.get(s, o).split(','))
 
     # .keys() to avoid 'RuntimeError: dictionary changed size during iteration'
     for section in options.keys():

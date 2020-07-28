@@ -68,8 +68,8 @@ class EntityList(Base, collections.abc.MutableSequence):
         if isinstance(idx, int):
             return self._list[idx]
         elif isinstance(idx, slice):
-            return  self.__class__((_ for _ in self._data[idx]), self._root)
-            #return self.__class__((_.to_data() for _ in self._list[idx]), root=self._root)
+            return  self.__class__(iter(self._data[idx]), self._root)
+            #return self.__class__((__.to_data() for __ in self._list[idx]), root=self._root)
         raise TypeError("%s indices must be integers or slices, not %s".
                         format(self.__class__.__name__, type(idx)))
 
