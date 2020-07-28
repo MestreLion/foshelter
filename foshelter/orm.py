@@ -73,7 +73,7 @@ class EntityList(Base, collections.abc.MutableSequence):
         raise TypeError("%s indices must be integers or slices, not %s".
                         format(self.__class__.__name__, type(idx)))
 
-    def __setitem__(self, idx: int or slice, obj: Entity or EntityList):
+    def __setitem__(self, idx: int or slice, obj: Entity or 'EntityList'):
         if not isinstance(idx, (int, slice)):
             raise TypeError("%s indices must be integers or slices, not %s".
                             format(self.__class__.__name__, type(idx)))
